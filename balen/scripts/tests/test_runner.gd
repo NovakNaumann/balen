@@ -104,6 +104,15 @@ func _initialize() -> void:
 			failures.append("Slayers Guild Plaza Front footprint must block movement.")
 		graybox.queue_free()
 
+	var authoring_script: Variant = load("res://scripts/world/plaza_authoring_node.gd")
+	if authoring_script == null:
+		failures.append("Plaza authoring node script failed to load.")
+	else:
+		var grid := Vector2i(8, -3)
+		var world_position: Vector2 = authoring_script.grid_to_iso(grid)
+		if authoring_script.world_to_grid(world_position) != grid:
+			failures.append("Plaza authoring grid/world conversion should round-trip for editor movement.")
+
 	if failures.is_empty():
 		print("BALEN_TESTS_OK")
 		quit(0)

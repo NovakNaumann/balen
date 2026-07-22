@@ -17,6 +17,8 @@ enum AuthoringKind {
 
 const TILE_SIZE := Vector2(112.0, 56.0)
 
+var _is_syncing_position := false
+
 @export var kind: AuthoringKind = AuthoringKind.BUILDING:
 	set(value):
 		kind = value
@@ -60,15 +62,20 @@ const TILE_SIZE := Vector2(112.0, 56.0)
 		blocks_movement = value
 		queue_redraw()
 
-
 func _ready() -> void:
 	_sync_position_to_grid()
 	queue_redraw()
 
 
 func _process(_delta: float) -> void:
-	if Engine.is_editor_hint() and position != grid_to_iso(grid_position):
-		_sync_position_to_grid()
+	if not Engine.is_editor_hint() or _is_syncing_position:
+		return
+
+	var expected_position := grid_to_iso(grid_position)
+	if position == expected_position:
+		return
+
+	grid_position = world_to_grid(position)
 
 
 func get_authoring_kind() -> int:
@@ -76,7 +83,9 @@ func get_authoring_kind() -> int:
 
 
 func _sync_position_to_grid() -> void:
+	_is_syncing_position = true
 	position = grid_to_iso(grid_position)
+	_is_syncing_position = false
 
 
 func _draw() -> void:
@@ -129,3 +138,9 @@ static func grid_to_iso(grid: Vector2i) -> Vector2:
 	var x := float(grid.x - grid.y) * TILE_SIZE.x * 0.5
 	var y := float(grid.x + grid.y) * TILE_SIZE.y * 0.5
 	return Vector2(x, y)
+
+
+static func world_to_grid(world_position: Vector2) -> Vector2i:
+	var grid_x := (world_position.x / (TILE_SIZE.x * 0.5) + world_position.y / (TILE_SIZE.y * 0.5)) * 0.5
+	var grid_y := (world_position.y / (TILE_SIZE.y * 0.5) - world_position.x / (TILE_SIZE.x * 0.5)) * 0.5
+	return Vector2i(roundi(grid_x), roundi(grid_y))
