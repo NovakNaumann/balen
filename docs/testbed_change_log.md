@@ -12,3 +12,4 @@ This file records implementation assumptions, source decisions, and notable chan
 - Added Milestone 0 autoload skeletons: `DataRegistry`, `EventBus`, `GameState`, `SaveService`, and `DebugService`.
 - Added a title screen and a generated graybox Aethelgard placeholder scene. These are debug/testbed placeholders, not approved art.
 - Added headless smoke and content validation scripts. The content validator warns, but does not fail, while the original Voyage JSON is not yet present.
+- Corrected the bootstrap target to native 1920x1080 and changed the graybox from true 3D to a 2.5D/isometric 2D scene with fake depth.

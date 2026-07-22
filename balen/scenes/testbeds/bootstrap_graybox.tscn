@@ -2,6 +2,5 @@
 
 [ext_resource type="Script" path="res://scripts/testbeds/bootstrap_graybox.gd" id="1_graybox"]
 
-[node name="BootstrapGraybox" type="Node3D"]
+[node name="BootstrapGraybox" type="Node2D"]
 script = ExtResource("1_graybox")
-

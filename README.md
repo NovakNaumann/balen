@@ -45,4 +45,4 @@ cd .\balen
 ..\godot.windows.opt.tools.64.exe --headless --path . --script res://scripts/tools/content_validator.gd
 ```
 
-Milestone 0 is intentionally small: boot to title screen, load a graybox scene, verify service skeletons, and keep source/canon rules visible.
+Milestone 0 is intentionally small: boot to title screen, load a 1920x1080 2.5D graybox scene, verify service skeletons, and keep source/canon rules visible.
