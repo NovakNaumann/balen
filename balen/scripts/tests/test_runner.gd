@@ -13,8 +13,17 @@ func _initialize() -> void:
 	_expect_file("res://scripts/autoload/DebugService.gd", failures)
 	_expect_file("res://source_data/voyage/source_manifest.json", failures)
 	_expect_file("res://source_data/voyage/balen_35_low_hp_d20_known_patch.json", failures)
+	_expect_external_file(ProjectSettings.globalize_path("res://../docs/Balen_Codex_Playable_Test_Phase_Plan.md"), failures)
 	_expect_external_file(ProjectSettings.globalize_path("res://../docs/2_5d_style_reference.md"), failures)
+	_expect_external_file(ProjectSettings.globalize_path("res://../docs/decisions.md"), failures)
+	_expect_external_file(ProjectSettings.globalize_path("res://../docs/assumptions.md"), failures)
+	_expect_external_file(ProjectSettings.globalize_path("res://../docs/known_issues.md"), failures)
+	_expect_external_file(ProjectSettings.globalize_path("res://../docs/playtest_checklist.md"), failures)
 	_expect_external_file(ProjectSettings.globalize_path("res://../docs/reference/aethelgard_concept_crossroads_plaza.png"), failures)
+	_expect_external_file(ProjectSettings.globalize_path("res://../docs/reference/painterly_reference_rookmire_curios.png"), failures)
+	_expect_external_file(ProjectSettings.globalize_path("res://../docs/reference/painterly_reference_aethelgard_jeweler.png"), failures)
+	_expect_external_file(ProjectSettings.globalize_path("res://../docs/reference/painterly_reference_worcen_knight.png"), failures)
+	_expect_external_file(ProjectSettings.globalize_path("res://../docs/reference/painterly_reference_magi_knight_researcher.png"), failures)
 
 	var registry_script: Variant = load("res://scripts/autoload/DataRegistry.gd")
 	if registry_script == null:
@@ -29,6 +38,9 @@ func _initialize() -> void:
 			failures.append("Source manifest does not reference the latest copied Voyage JSON.")
 		if manifest.get("source_hash_sha256", "") != "E7C75DFA082DE61FD0AFD1CBE242179764BE5533EEF27B10E29E55E17344606B":
 			failures.append("Source manifest hash does not match the copied Voyage JSON.")
+		var authority_documents: Array = manifest.get("authority_documents", [])
+		if not authority_documents.has("docs/Balen_Codex_Playable_Test_Phase_Plan.md"):
+			failures.append("Source manifest does not list the playable test phase plan as authority.")
 		registry.queue_free()
 
 	var game_state_script: Variant = load("res://scripts/autoload/GameState.gd")

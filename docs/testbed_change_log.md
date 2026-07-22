@@ -17,3 +17,6 @@ This file records implementation assumptions, source decisions, and notable chan
 - Added the first working exploration test: party selection, click-to-move on reachable isometric tiles, one public testbed evidence interaction, same-scene combat overlay toggle, and F5/F9 debug save/load.
 - Added the latest Voyage JSON source snapshot under `balen/source_data/voyage/` unchanged and read-only, updated its manifest hash/size, and preserved the Aethelgard concept art under `docs/reference/`.
 - Reworked the playable test scene into Crossroads Plaza of Aethelgard, using public source cues: neutral circular heart-city, gateway/civic hub, route links to city/ringmarket/guild/citadel/archive/stable yard, and Maelin Vossmark's public caravan ledger.
+- Added `docs/Balen_Codex_Playable_Test_Phase_Plan.md` as the current playable-test authority and recorded the Phase 0 governance contract in `README.md`, `docs/decisions.md`, `docs/assumptions.md`, `docs/known_issues.md`, and `docs/playtest_checklist.md`.
+- Pinned Godot to `4.7.1.stable.steam` and documented the mismatch between the phase plan's older embedded source filename/hash and the latest attached Voyage JSON snapshot currently used for validation.
+- Preserved four painterly realism references under `docs/reference/` for early Aethelgard sprite, portrait, species, and material direction.

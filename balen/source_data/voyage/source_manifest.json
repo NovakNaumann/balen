@@ -7,6 +7,9 @@
   "source_timestamp_utc": "2026-07-22T00:44:00Z",
   "source_format": "Voyage.IO Heroes V35",
   "heroes_version": "Voyage.IO Heroes V35",
+  "phase_plan_document_source_filename": "balen 35_ (1)(1).json",
+  "phase_plan_document_source_hash_sha256": "9029c4036288223a911da6ebaae63ec76974ee6183dc28491736a400dcd68987",
+  "active_source_resolution": "The attached latest source file balen_35_low_hp_d20_known_patch.json supersedes the older filename/hash embedded in the phase plan for Phase 0 validation.",
   "pinned_source_mods": [
     {
       "id": "zxKkFzisLYR-",
@@ -18,6 +21,7 @@
     }
   ],
   "authority_documents": [
+    "docs/Balen_Codex_Playable_Test_Phase_Plan.md",
     "docs/Balen_Codex_Game_Testbed_Plan.md",
     "docs/Balen_World_Canon_Bible.md"
   ],

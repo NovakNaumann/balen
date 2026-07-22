@@ -6,12 +6,21 @@ Primary Aethelgard concept reference for the current pass:
 
 - `docs/reference/aethelgard_concept_crossroads_plaza.png`
 
+Painterly realism references for early sprite and environment direction:
+
+- `docs/reference/painterly_reference_rookmire_curios.png`
+- `docs/reference/painterly_reference_aethelgard_jeweler.png`
+- `docs/reference/painterly_reference_worcen_knight.png`
+- `docs/reference/painterly_reference_magi_knight_researcher.png`
+
 ## Visual Direction
 
 - Use a fixed isometric 2.5D view built from 2D art layers that imply volume.
 - Environments should appear dimensional through painted planes, tile diamonds, object bases, fake height, shadows, parallax, and depth sorting.
 - Characters are 2D sprites/portraits/animation sets placed into the same isometric space.
 - For Aethelgard, prioritize pale civic stone, blue-gold banners, radial roads, canals/bridges, market edges, crowd flow, and a distant Magi-Knight Citadel axis.
+- Use painterly realism for placeholder-forward assets: hand-painted material texture, readable silhouettes, warm interior craft detail, blue-gold civic cloth, brass/gold trim, pale stone, and clear species separation.
+- Character sprites should remain 2.5D readable at game scale even when portraits use richer painterly detail.
 - Avoid true 3D cameras, 3D mesh-first environments, free perspective orbit, or physically modeled 3D battle arenas unless a future exception is explicitly approved.
 - Target a native 1920 x 1080 composition first. UI and scene framing must fit that screen cleanly.
 

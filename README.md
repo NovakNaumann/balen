@@ -8,18 +8,30 @@ This repository is intentionally separate from the 4872 A.D. project and should 
 
 Read these files before changing code or content:
 
-1. `docs/Balen_Codex_Game_Testbed_Plan.md`
+1. `docs/Balen_Codex_Playable_Test_Phase_Plan.md`
 2. `docs/Balen_World_Canon_Bible.md`
-3. `docs/2_5d_style_reference.md`
-4. `docs/testbed_change_log.md`
+3. `docs/Balen_Codex_Game_Testbed_Plan.md`
+4. `docs/2_5d_style_reference.md`
+5. `docs/decisions.md`
+6. `docs/assumptions.md`
+7. `docs/known_issues.md`
+8. `docs/testbed_change_log.md`
 
-The testbed plan defines the milestone order and systems scope. The canon bible defines the lore, terminology, NPC, nation, species, secrecy, and art guardrails. The 2.5D style reference defines how Balen should interpret isometric environment, character, and combat presentation.
+The playable test phase plan is the current implementation authority for the first playable Crossroads Plaza test. The canon bible defines lore, terminology, NPC, nation, species, secrecy, and art guardrails. The earlier testbed plan remains useful background when it does not conflict with the phase plan. The 2.5D style reference defines how Balen should interpret isometric environment, character, art, and same-environment combat presentation.
+
+## Version Pin
+
+Godot executable: `godot.windows.opt.tools.64.exe`
+
+Pinned engine version for this repository: `4.7.1.stable.steam`
+
+`balen/project.godot` also records the Godot feature tag `4.7` and the Balen version pin.
 
 ## Current Focus
 
-Current implementation target: Milestone 1 working exploration test.
+Current implementation target: playable test Phase 0 governance over the existing Crossroads Plaza prototype.
 
-Do not begin later systems until the current working test remains launchable and the headless checks pass.
+Do not begin a later phase until the current acceptance gate is documented and the headless checks pass.
 
 ## Godot Project
 
@@ -57,3 +69,11 @@ Working test controls:
 - `Q` / `E`: rotate the isometric view by 90 degrees.
 - `F5` / `F9`: debug quick save/load.
 - `Esc`: return to title.
+
+## Testbed Namespace Rule
+
+Use `testbed.*` for authored playable-test content that is not approved permanent canon. Use `debug.*` for developer-only fixtures, laboratories, overlays, and test controls. Runtime code must not load the full Voyage source JSON directly; it should use compact imported/generated data once the importer phase exists.
+
+## Explicit Non-Goals For The First Playable Test
+
+Do not build continent-scale travel, all of Aethelgard, full character creation, final class progression, a full economy, mounted travel, free-flight, romance, multiplayer, procedural world simulation, final cinematics, final voice acting, live Voyage synchronization, or runtime generative narration before the Crossroads playable test passes.
