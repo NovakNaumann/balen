@@ -80,6 +80,10 @@ func _initialize() -> void:
 		var graybox: Node = graybox_script.new()
 		if not graybox._is_grid_walkable(Vector2i(0, 0)):
 			failures.append("Central plaza tile should remain walkable.")
+		if not graybox._is_grid_walkable(Vector2i(-12, 7)):
+			failures.append("Left road exit to Slayers Guild HQ should remain walkable.")
+		if not graybox._is_grid_walkable(Vector2i(12, 7)):
+			failures.append("Right road exit to The Ringmarket should remain walkable.")
 		if graybox._is_grid_walkable(Vector2i(-14, 2)):
 			failures.append("Slayers Guild Plaza Front footprint must block movement.")
 		graybox.queue_free()
