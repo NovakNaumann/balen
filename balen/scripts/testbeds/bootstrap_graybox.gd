@@ -8,6 +8,11 @@ const FLOOR_HALF_EXTENTS := Vector2i(14, 24)
 const FOUNTAIN_GRID := Vector2i(0, -6)
 const EAST_WEST_ROAD_Y := 7
 const EVIDENCE_GRID := Vector2i(-9, 11)
+const DEPTH_RIGHT_FACE := 0
+const DEPTH_LEFT_FACE := 1
+const DEPTH_TOP_FACE := 2
+const DEPTH_ROOF_FACE := 3
+const DEPTH_RIDGE_FACE := 4
 const AUTHORING_ROOT_PATH := NodePath("MapAuthoring")
 const AUTHORING_KIND_ROAD := 0
 const AUTHORING_KIND_SIDEWALK := 1
@@ -909,8 +914,8 @@ func _add_roof_cap(node_name: String, origin: Vector2i, footprint: Vector2i, hei
 		corners[2] + lift,
 		(corners[3] + corners[0]) * 0.5 + lift + Vector2(0.0, -18.0)
 	])
-	_add_polygon("%s Main" % node_name, roof, color, int(corners[2].y) + 18)
-	_add_polygon("%s Ridge" % node_name, ridge, color.lightened(0.10), int(corners[2].y) + 19)
+	_add_polygon("%s Main" % node_name, roof, color, _depth_z(corners[2], DEPTH_ROOF_FACE))
+	_add_polygon("%s Ridge" % node_name, ridge, color.lightened(0.10), _depth_z(corners[2], DEPTH_RIDGE_FACE))
 
 
 func _add_isometric_block(node_name: String, origin: Vector2i, footprint: Vector2i, height_tiles: float, color: Color) -> void:
@@ -925,9 +930,9 @@ func _add_isometric_block(node_name: String, origin: Vector2i, footprint: Vector
 	var right := PackedVector2Array([corners[1] + lift, corners[2] + lift, corners[2], corners[1]])
 	var left := PackedVector2Array([corners[2] + lift, corners[3] + lift, corners[3], corners[2]])
 
-	_add_polygon("%s RightFace" % node_name, right, color.darkened(0.18), int(corners[2].y))
-	_add_polygon("%s LeftFace" % node_name, left, color.darkened(0.28), int(corners[2].y) + 1)
-	_add_polygon("%s TopFace" % node_name, top, color.lightened(0.08), int(corners[2].y) + 2)
+	_add_polygon("%s RightFace" % node_name, right, color.darkened(0.18), _depth_z(corners[2], DEPTH_RIGHT_FACE))
+	_add_polygon("%s LeftFace" % node_name, left, color.darkened(0.28), _depth_z(corners[2], DEPTH_LEFT_FACE))
+	_add_polygon("%s TopFace" % node_name, top, color.lightened(0.08), _depth_z(corners[2], DEPTH_TOP_FACE))
 
 
 func _add_actor_marker(actor_id: String, display_name: String, color: Color) -> void:
@@ -1069,6 +1074,10 @@ func _add_polygon(node_name: String, points: PackedVector2Array, color: Color, z
 	polygon.color = color
 	polygon.z_index = z
 	_world_root.add_child(polygon)
+
+
+func _depth_z(anchor: Vector2, local_order: int = 0) -> int:
+	return int(anchor.y) + local_order
 
 
 func _diamond(center: Vector2) -> PackedVector2Array:

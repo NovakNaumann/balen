@@ -101,6 +101,10 @@ func _initialize() -> void:
 		if graybox._authored_grid_position(authored_node) != Vector2i(8, -2):
 			failures.append("Runtime placement should follow the visible editor position when it diverges from grid_position.")
 		authored_node.queue_free()
+		var back_anchor: Vector2 = graybox._authoring_position_from_grid(Vector2i(0, 0))
+		var front_anchor: Vector2 = graybox._authoring_position_from_grid(Vector2i(0, 1))
+		if graybox._depth_z(front_anchor, 0) <= graybox._depth_z(back_anchor, 4):
+			failures.append("Foreground objects should sort above the highest local layer of background objects.")
 		if not graybox._is_grid_walkable(Vector2i(0, 0)):
 			failures.append("Central plaza tile should remain walkable.")
 		if not graybox._is_grid_walkable(Vector2i(-12, 7)):
