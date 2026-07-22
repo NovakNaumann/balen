@@ -15,6 +15,8 @@ const REQUIRED_DOCS := [
 const REQUIRED_REFERENCE_IMAGES := [
 	"../docs/reference/aethelgard_concept_crossroads_plaza.png",
 	"../docs/reference/aethelgard_concept_crossroads_plaza_circled.png",
+	"../docs/reference/aethelgard_plaza_ground_grandeur_reference.png",
+	"../docs/reference/aethelgard_plaza_scale_reference.png",
 	"../docs/reference/painterly_reference_rookmire_curios.png",
 	"../docs/reference/painterly_reference_aethelgard_jeweler.png",
 	"../docs/reference/painterly_reference_worcen_knight.png",

@@ -6,6 +6,8 @@ Primary Aethelgard concept reference for the current pass:
 
 - `docs/reference/aethelgard_concept_crossroads_plaza.png`
 - `docs/reference/aethelgard_concept_crossroads_plaza_circled.png`
+- `docs/reference/aethelgard_plaza_ground_grandeur_reference.png`
+- `docs/reference/aethelgard_plaza_scale_reference.png`
 
 Painterly realism references for early sprite and environment direction:
 
@@ -22,6 +24,8 @@ Painterly realism references for early sprite and environment direction:
 - For Aethelgard, prioritize pale civic stone, blue-gold banners, radial roads, canals/bridges, market edges, crowd flow, and a distant Magi-Knight Citadel axis.
 - Crossroads Plaza should represent the large fountain boulevard/market approach circled in the Aethelgard concept reference, not the entire city compressed into one small map.
 - City rings, canals, and the Magi-Knight Citadel are scale/context/backdrop signals until their own zones are intentionally built.
+- Aethelgard is a city-state and should feel grandiose: streets and plazas must leave breathing room for crowds, mounts, wagons, guards, market flow, and many Balen species.
+- Because Aethelgard is the Ring City, major civic areas should favor circular plazas, ring roads, curved terraces, round fountain basins, and radial boulevards over purely rectangular town-square layouts.
 - Use painterly realism for placeholder-forward assets: hand-painted material texture, readable silhouettes, warm interior craft detail, blue-gold civic cloth, brass/gold trim, pale stone, and clear species separation.
 - Character sprites should remain 2.5D readable at game scale even when portraits use richer painterly detail.
 - Avoid true 3D cameras, 3D mesh-first environments, free perspective orbit, or physically modeled 3D battle arenas unless a future exception is explicitly approved.

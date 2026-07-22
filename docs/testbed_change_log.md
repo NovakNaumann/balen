@@ -21,3 +21,4 @@ This file records implementation assumptions, source decisions, and notable chan
 - Pinned Godot to `4.7.1.stable.steam` and documented the mismatch between the phase plan's older embedded source filename/hash and the latest attached Voyage JSON snapshot currently used for validation.
 - Preserved four painterly realism references under `docs/reference/` for early Aethelgard sprite, portrait, species, and material direction.
 - Reframed Crossroads Plaza around the large fountain boulevard/market approach circled in the concept art instead of compressing all of Aethelgard into a tiny map. City rings, canals, and the Citadel are now treated as backdrop/exit context for this prototype slice.
+- Added grandeur and scale references for Aethelgard as a city-state/Ring City. The Crossroads prototype now uses a larger round plaza footprint, visible plaza ring bands, radial spokes, denser mixed crowd markers, and taller edge/backdrop facades.
