@@ -379,7 +379,7 @@ func _add_radial_roads() -> void:
 			if not _is_grid_walkable(grid_position):
 				continue
 
-			var on_crossroad := abs(x) <= 1 or abs(y) <= 1 or abs(x - y) <= 1 or abs(x + y) <= 1
+			var on_crossroad: bool = abs(x) <= 1 or abs(y) <= 1 or abs(x - y) <= 1 or abs(x + y) <= 1
 			if on_crossroad:
 				var tile := Polygon2D.new()
 				var center := _iso(grid_position)
