@@ -462,7 +462,7 @@ func _actor_definitions() -> Array[Dictionary]:
 		result.append({
 			"id": actor_id,
 			"name": _node_display_name(node),
-			"grid": node.get("grid_position"),
+			"grid": _authored_grid_position(node),
 			"color": node.get("color")
 		})
 	return result
@@ -477,7 +477,7 @@ func _route_definitions() -> Array[Dictionary]:
 	for node in routes:
 		result.append({
 			"name": _node_display_name(node),
-			"grid": node.get("grid_position"),
+			"grid": _authored_grid_position(node),
 			"color": node.get("color")
 		})
 	return result
@@ -488,7 +488,7 @@ func _blocker_definitions() -> Array[Dictionary]:
 	for node in _authoring_nodes():
 		if bool(node.get("blocks_movement")):
 			result.append({
-				"origin": node.get("grid_position"),
+				"origin": _authored_grid_position(node),
 				"footprint": node.get("footprint")
 			})
 	if result.is_empty():
@@ -501,7 +501,7 @@ func _authored_placement_definitions(kind: int) -> Array[Dictionary]:
 	for node in _authoring_nodes(kind):
 		result.append({
 			"name": _node_display_name(node),
-			"grid": node.get("grid_position"),
+			"grid": _authored_grid_position(node),
 			"footprint": node.get("footprint"),
 			"height": node.get("height_tiles"),
 			"color": node.get("color"),
@@ -509,6 +509,15 @@ func _authored_placement_definitions(kind: int) -> Array[Dictionary]:
 			"awning": node.get("awning_color")
 		})
 	return result
+
+
+func _authored_grid_position(node: Node) -> Vector2i:
+	var grid_position: Vector2i = node.get("grid_position")
+	var visual_grid := _authoring_grid_from_position(node.position)
+	var expected_position := _authoring_position_from_grid(grid_position)
+	if node.position.distance_to(expected_position) > 0.5:
+		return visual_grid
+	return grid_position
 
 
 func _has_authored_ground() -> bool:
@@ -888,18 +897,17 @@ func _add_roof_cap(node_name: String, origin: Vector2i, footprint: Vector2i, hei
 		_iso(origin + Vector2i(0, footprint.y))
 	]
 	var lift := Vector2(0.0, -height_tiles * TILE_SIZE.y)
-	var eave := Vector2(0.0, -10.0)
 	var roof := PackedVector2Array([
-		corners[0] + lift + Vector2(0.0, -12.0),
-		corners[1] + lift + Vector2(18.0, 0.0),
-		corners[2] + lift + Vector2(0.0, 12.0),
-		corners[3] + lift + Vector2(-18.0, 0.0)
+		corners[0] + lift,
+		corners[1] + lift,
+		corners[2] + lift,
+		corners[3] + lift
 	])
 	var ridge := PackedVector2Array([
-		corners[0] + lift + eave,
-		(corners[1] + corners[2]) * 0.5 + lift + Vector2(0.0, -32.0),
-		corners[2] + lift + Vector2(0.0, 12.0),
-		(corners[3] + corners[0]) * 0.5 + lift + Vector2(0.0, -32.0)
+		corners[0] + lift,
+		(corners[1] + corners[2]) * 0.5 + lift + Vector2(0.0, -18.0),
+		corners[2] + lift,
+		(corners[3] + corners[0]) * 0.5 + lift + Vector2(0.0, -18.0)
 	])
 	_add_polygon("%s Main" % node_name, roof, color, int(corners[2].y) + 18)
 	_add_polygon("%s Ridge" % node_name, ridge, color.lightened(0.10), int(corners[2].y) + 19)
@@ -1148,6 +1156,18 @@ func _iso(grid_position: Vector2i) -> Vector2:
 	var x := float(rotated.x - rotated.y) * TILE_SIZE.x * 0.5
 	var y := float(rotated.x + rotated.y) * TILE_SIZE.y * 0.5
 	return Vector2(x, y)
+
+
+func _authoring_position_from_grid(grid_position: Vector2i) -> Vector2:
+	var x := float(grid_position.x - grid_position.y) * TILE_SIZE.x * 0.5
+	var y := float(grid_position.x + grid_position.y) * TILE_SIZE.y * 0.5
+	return Vector2(x, y)
+
+
+func _authoring_grid_from_position(world_position: Vector2) -> Vector2i:
+	var grid_x := (world_position.x / (TILE_SIZE.x * 0.5) + world_position.y / (TILE_SIZE.y * 0.5)) * 0.5
+	var grid_y := (world_position.y / (TILE_SIZE.y * 0.5) - world_position.x / (TILE_SIZE.x * 0.5)) * 0.5
+	return Vector2i(roundi(grid_x), roundi(grid_y))
 
 
 func _grid_from_world(world_position: Vector2) -> Vector2i:

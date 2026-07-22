@@ -72,6 +72,7 @@ Crossroads Plaza can be manually shaped in Godot:
 Ground authoring uses broad editable regions: road nodes are the light plaza routes, sidewalk nodes are the grey pedestrian areas, and prop/building nodes sit on top of them.
 
 Viewport movement is tile-snapped: dragging a `PlazaAuthoringNode` with Godot's move tool updates its `grid_position` to the nearest isometric tile.
+Building nodes also preview their vertical 2.5D volume in the editor, so leave space for the orange/tall volume outline, not only the flat red footprint.
 
 Working test controls:
 

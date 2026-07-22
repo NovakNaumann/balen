@@ -95,6 +95,8 @@ func _draw() -> void:
 	var preview_color := color
 	preview_color.a = _preview_alpha()
 	draw_colored_polygon(_footprint_polygon(), preview_color)
+	if kind == AuthoringKind.BUILDING:
+		_draw_building_volume_preview()
 	if blocks_movement:
 		draw_polyline(_footprint_polygon(), Color(1.0, 0.25, 0.18, 0.85), 3.0, true)
 	else:
@@ -123,6 +125,38 @@ func _preview_outline_width() -> float:
 	if kind == AuthoringKind.ROAD or kind == AuthoringKind.SIDEWALK or kind == AuthoringKind.FOUNDATION:
 		return 3.0
 	return 2.0
+
+
+func _draw_building_volume_preview() -> void:
+	var corners := [
+		Vector2.ZERO,
+		grid_to_iso(Vector2i(footprint.x, 0)),
+		grid_to_iso(footprint),
+		grid_to_iso(Vector2i(0, footprint.y))
+	]
+	var lift := Vector2(0.0, -height_tiles * TILE_SIZE.y)
+	var wall_color := color.darkened(0.25)
+	wall_color.a = 0.38
+	var roof_preview_color := roof_color
+	roof_preview_color.a = 0.46
+	var side_face := PackedVector2Array([corners[1] + lift, corners[2] + lift, corners[2], corners[1]])
+	var front_face := PackedVector2Array([corners[2] + lift, corners[3] + lift, corners[3], corners[2]])
+	var top_face := PackedVector2Array([corners[0] + lift, corners[1] + lift, corners[2] + lift, corners[3] + lift])
+	draw_colored_polygon(side_face, wall_color)
+	draw_colored_polygon(front_face, wall_color.darkened(0.12))
+	draw_colored_polygon(top_face, roof_preview_color)
+	draw_polyline(_volume_outline(corners, lift), Color(1.0, 0.46, 0.24, 0.88), 2.0, true)
+
+
+func _volume_outline(corners: Array, lift: Vector2) -> PackedVector2Array:
+	return PackedVector2Array([
+		corners[0] + lift,
+		corners[1] + lift,
+		corners[2] + lift,
+		corners[2],
+		corners[3],
+		corners[3] + lift
+	])
 
 
 func _footprint_polygon() -> PackedVector2Array:

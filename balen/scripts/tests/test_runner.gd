@@ -94,6 +94,13 @@ func _initialize() -> void:
 		failures.append("Bootstrap graybox script failed to load.")
 	else:
 		var graybox: Node = graybox_script.new()
+		var authored_node := Node2D.new()
+		authored_node.set_script(load("res://scripts/world/plaza_authoring_node.gd"))
+		authored_node.grid_position = Vector2i.ZERO
+		authored_node.position = Vector2(560.0, 168.0)
+		if graybox._authored_grid_position(authored_node) != Vector2i(8, -2):
+			failures.append("Runtime placement should follow the visible editor position when it diverges from grid_position.")
+		authored_node.queue_free()
 		if not graybox._is_grid_walkable(Vector2i(0, 0)):
 			failures.append("Central plaza tile should remain walkable.")
 		if not graybox._is_grid_walkable(Vector2i(-12, 7)):
