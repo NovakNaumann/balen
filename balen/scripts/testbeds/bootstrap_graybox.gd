@@ -8,6 +8,14 @@ const FLOOR_HALF_EXTENTS := Vector2i(14, 24)
 const FOUNTAIN_GRID := Vector2i(0, -6)
 const EAST_WEST_ROAD_Y := 7
 const EVIDENCE_GRID := Vector2i(-9, 11)
+const AUTHORING_ROOT_PATH := NodePath("MapAuthoring")
+const AUTHORING_KIND_BUILDING := 3
+const AUTHORING_KIND_TENT := 4
+const AUTHORING_KIND_ROUTE := 5
+const AUTHORING_KIND_SPAWN := 6
+const AUTHORING_KIND_CROWD := 7
+const AUTHORING_KIND_BANNER := 8
+const AUTHORING_KIND_COMBAT_AREA := 9
 
 const ACTOR_DEFINITIONS := [
 	{"id": "debug.knight", "name": "DEBUG Knight", "grid": Vector2i(-2, 20), "color": Color(0.28, 0.42, 0.58)},
@@ -105,15 +113,15 @@ func _build_scene() -> void:
 
 
 func _initialize_actor_states() -> void:
-	for actor in ACTOR_DEFINITIONS:
-		var actor_id := str(actor.id)
+	for actor in _actor_definitions():
+		var actor_id := str(actor.get("id", ""))
 		if _actor_states.has(actor_id):
 			continue
 
-		var grid_position: Vector2i = actor.grid
+		var grid_position: Vector2i = actor.get("grid", Vector2i.ZERO)
 		_actor_states[actor_id] = {
 			"id": actor_id,
-			"display_name": str(actor.name),
+			"display_name": str(actor.get("name", actor_id)),
 			"grid": grid_position,
 			"target_grid": grid_position,
 			"world_position": _iso(grid_position)
@@ -180,8 +188,7 @@ func _rebuild_world() -> void:
 	_add_outer_canals_and_bridges()
 	_add_citadel_axis()
 	_add_central_fountain()
-	_add_grand_city_backdrop()
-	_add_plaza_frontage_architecture()
+	_add_authored_buildings()
 	_add_market_tents()
 	_add_civic_banners()
 	_add_route_markers()
@@ -192,10 +199,10 @@ func _rebuild_world() -> void:
 	_overlay_root.name = "SameSceneCombatOverlay"
 	_overlay_root.visible = _combat_overlay_visible
 	_world_root.add_child(_overlay_root)
-	_add_same_environment_combat_overlay(Vector2i(5, 11), Vector2i(11, 7))
+	_add_authored_combat_overlay()
 
-	for actor in ACTOR_DEFINITIONS:
-		_add_actor_marker(str(actor.id), str(actor.name), actor.color)
+	for actor in _actor_definitions():
+		_add_actor_marker(str(actor.get("id", "")), str(actor.get("name", "")), actor.get("color", Color.WHITE))
 
 	var label := Label.new()
 	label.text = "Crossroads Plaza, Aethelgard: one grand ring-city plaza node"
@@ -412,10 +419,96 @@ func _show_dialog(text: String) -> void:
 	_dialog_panel.visible = true
 
 
+func _collect_authoring_nodes(parent: Node, kind_filter: int, result: Array[Node]) -> void:
+	for child in parent.get_children():
+		if child.has_method("get_authoring_kind"):
+			var child_kind := int(child.call("get_authoring_kind"))
+			if kind_filter < 0 or child_kind == kind_filter:
+				result.append(child)
+		_collect_authoring_nodes(child, kind_filter, result)
+
+
+func _authoring_nodes(kind_filter := -1) -> Array[Node]:
+	var authoring_root := get_node_or_null(AUTHORING_ROOT_PATH)
+	var result: Array[Node] = []
+	if authoring_root != null:
+		_collect_authoring_nodes(authoring_root, kind_filter, result)
+	return result
+
+
+func _node_display_name(node: Node) -> String:
+	var named_value := str(node.get("display_name"))
+	if named_value != "":
+		return named_value
+	return node.name
+
+
+func _actor_definitions() -> Array[Dictionary]:
+	var spawns := _authoring_nodes(AUTHORING_KIND_SPAWN)
+	if spawns.is_empty():
+		return ACTOR_DEFINITIONS
+
+	var result: Array[Dictionary] = []
+	for node in spawns:
+		var actor_id := str(node.get("actor_id"))
+		if actor_id == "":
+			actor_id = str(node.name).to_snake_case()
+		result.append({
+			"id": actor_id,
+			"name": _node_display_name(node),
+			"grid": node.get("grid_position"),
+			"color": node.get("color")
+		})
+	return result
+
+
+func _route_definitions() -> Array[Dictionary]:
+	var routes := _authoring_nodes(AUTHORING_KIND_ROUTE)
+	if routes.is_empty():
+		return PLAZA_ROUTES
+
+	var result: Array[Dictionary] = []
+	for node in routes:
+		result.append({
+			"name": _node_display_name(node),
+			"grid": node.get("grid_position"),
+			"color": node.get("color")
+		})
+	return result
+
+
+func _blocker_definitions() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for node in _authoring_nodes():
+		if bool(node.get("blocks_movement")):
+			result.append({
+				"origin": node.get("grid_position"),
+				"footprint": node.get("footprint")
+			})
+	if result.is_empty():
+		return ARCHITECTURE_BLOCKERS
+	return result
+
+
+func _authored_placement_definitions(kind: int) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for node in _authoring_nodes(kind):
+		result.append({
+			"name": _node_display_name(node),
+			"grid": node.get("grid_position"),
+			"footprint": node.get("footprint"),
+			"height": node.get("height_tiles"),
+			"color": node.get("color"),
+			"roof": node.get("roof_color"),
+			"awning": node.get("awning_color")
+		})
+	return result
+
+
 func _add_architecture_foundation_fill() -> void:
-	for blocker in ARCHITECTURE_BLOCKERS:
-		var origin: Vector2i = blocker.origin
-		var footprint: Vector2i = blocker.footprint
+	for blocker in _blocker_definitions():
+		var origin: Vector2i = blocker.get("origin", Vector2i.ZERO)
+		var footprint: Vector2i = blocker.get("footprint", Vector2i.ONE)
 		for x in range(origin.x, origin.x + footprint.x):
 			for y in range(origin.y, origin.y + footprint.y):
 				var grid_position := Vector2i(x, y)
@@ -606,8 +699,30 @@ func _add_plaza_frontage_architecture() -> void:
 		_add_isometric_block("Plaza Arcade Pier %s" % str(grid_position), grid_position, Vector2i(1, 1), 1.9, Color(0.74, 0.69, 0.58))
 
 
+func _add_authored_buildings() -> void:
+	var buildings := _authored_placement_definitions(AUTHORING_KIND_BUILDING)
+	if buildings.is_empty():
+		_add_grand_city_backdrop()
+		_add_plaza_frontage_architecture()
+		return
+
+	for building in buildings:
+		var grid_position: Vector2i = building.get("grid", Vector2i.ZERO)
+		var footprint: Vector2i = building.get("footprint", Vector2i.ONE)
+		var height: float = float(building.get("height", 1.0))
+		var body_color: Color = building.get("color", Color(0.70, 0.64, 0.52))
+		var roof_color: Color = building.get("roof", Color(0.16, 0.31, 0.46))
+		var awning_color: Color = building.get("awning", Color.TRANSPARENT)
+		var building_name := str(building.get("name", "Authored Building"))
+		_add_plaza_building(building_name, grid_position, footprint, height, body_color, roof_color)
+		if awning_color.a > 0.0:
+			_add_frontage_awning("%s Awning" % building_name, grid_position + Vector2i(0, footprint.y - 1), Vector2i(footprint.x, 1), awning_color)
+
+
 func _add_market_tents() -> void:
-	for tent in [
+	var tents := _authored_placement_definitions(AUTHORING_KIND_TENT)
+	if tents.is_empty():
+		tents = [
 		{"name": "Ringmarket Blue Awning", "grid": Vector2i(8, -3), "color": Color(0.18, 0.29, 0.58)},
 		{"name": "Ringmarket Amber Awning", "grid": Vector2i(8, 2), "color": Color(0.72, 0.43, 0.18)},
 		{"name": "Lower Blue Market Stall", "grid": Vector2i(9, 14), "color": Color(0.16, 0.27, 0.55)},
@@ -617,24 +732,37 @@ func _add_market_tents() -> void:
 		{"name": "Slayer Notice Awning", "grid": Vector2i(-9, 4), "color": Color(0.35, 0.36, 0.34)},
 		{"name": "Left Cloth Merchant", "grid": Vector2i(-9, 13), "color": Color(0.55, 0.35, 0.22)},
 		{"name": "Left Food Seller", "grid": Vector2i(-8, 18), "color": Color(0.22, 0.44, 0.34)}
-	]:
-		var grid_position: Vector2i = tent.grid
-		_add_isometric_block(str(tent.name), grid_position, Vector2i(1, 1), 0.85, tent.color)
+		]
+
+	for tent in tents:
+		var grid_position: Vector2i = tent.get("grid", Vector2i.ZERO)
+		var footprint: Vector2i = tent.get("footprint", Vector2i.ONE)
+		var height := float(tent.get("height", 0.85))
+		var color: Color = tent.get("color", Color(0.35, 0.26, 0.20))
+		_add_isometric_block(str(tent.get("name", "Market Tent")), grid_position, footprint, height, color)
 
 
 func _add_civic_banners() -> void:
-	for grid_position in [Vector2i(-5, -15), Vector2i(5, -15), Vector2i(-7, -6), Vector2i(7, -6), Vector2i(-7, 3), Vector2i(7, 3), Vector2i(-6, 12), Vector2i(6, 12), Vector2i(-5, 20), Vector2i(5, 20)]:
-		_add_isometric_block("Blue Gold Civic Banner %s" % str(grid_position), grid_position, Vector2i(1, 1), 1.4, Color(0.12, 0.22, 0.50))
+	var banners := _authored_placement_definitions(AUTHORING_KIND_BANNER)
+	if banners.is_empty():
+		for grid_position in [Vector2i(-5, -15), Vector2i(5, -15), Vector2i(-7, -6), Vector2i(7, -6), Vector2i(-7, 3), Vector2i(7, 3), Vector2i(-6, 12), Vector2i(6, 12), Vector2i(-5, 20), Vector2i(5, 20)]:
+			_add_isometric_block("Blue Gold Civic Banner %s" % str(grid_position), grid_position, Vector2i(1, 1), 1.4, Color(0.12, 0.22, 0.50))
+		return
+
+	for banner in banners:
+		var grid_position: Vector2i = banner.get("grid", Vector2i.ZERO)
+		var color: Color = banner.get("color", Color(0.12, 0.22, 0.50))
+		_add_isometric_block(str(banner.get("name", "Civic Banner")), grid_position, Vector2i(1, 1), float(banner.get("height", 1.4)), color)
 
 
 func _add_route_markers() -> void:
-	for route in PLAZA_ROUTES:
-		var grid_position: Vector2i = route.grid
-		var color: Color = route.color
-		_add_isometric_block("%s Route Marker" % str(route.name), grid_position, Vector2i(1, 1), 0.55, color)
+	for route in _route_definitions():
+		var grid_position: Vector2i = route.get("grid", Vector2i.ZERO)
+		var color: Color = route.get("color", Color(0.73, 0.65, 0.50))
+		_add_isometric_block("%s Route Marker" % str(route.get("name", "Route")), grid_position, Vector2i(1, 1), 0.55, color)
 
 		var label := Label.new()
-		label.text = str(route.name)
+		label.text = str(route.get("name", "Route"))
 		label.position = _iso(grid_position) + Vector2(-46.0, -54.0)
 		label.add_theme_font_size_override("font_size", 13)
 		label.z_index = int(label.position.y) + 30
@@ -642,14 +770,22 @@ func _add_route_markers() -> void:
 
 
 func _add_crowd_markers() -> void:
-	for grid_position in [
+	var crowd_nodes := _authored_placement_definitions(AUTHORING_KIND_CROWD)
+	var crowd_positions: Array[Vector2i] = []
+	if crowd_nodes.is_empty():
+		crowd_positions = [
 		Vector2i(-1, -18), Vector2i(1, -17), Vector2i(-3, -13), Vector2i(3, -12),
 		Vector2i(-6, -8), Vector2i(6, -8), Vector2i(-2, -5), Vector2i(2, -4),
 		Vector2i(-9, -2), Vector2i(9, -1), Vector2i(-5, 1), Vector2i(5, 2),
 		Vector2i(-2, 6), Vector2i(2, 7), Vector2i(-7, 8), Vector2i(7, 8),
 		Vector2i(-10, 12), Vector2i(10, 12), Vector2i(-4, 13), Vector2i(4, 14),
 		Vector2i(-2, 18), Vector2i(2, 19), Vector2i(-6, 20), Vector2i(6, 20)
-	]:
+		]
+	else:
+		for crowd_node in crowd_nodes:
+			crowd_positions.append(crowd_node.get("grid", Vector2i.ZERO))
+
+	for grid_position in crowd_positions:
 		var base := _iso(grid_position) + Vector2(0.0, -12.0)
 		var crowd := Polygon2D.new()
 		crowd.name = "Crowd Placeholder %s" % str(grid_position)
@@ -830,6 +966,18 @@ func _add_same_environment_combat_overlay(origin: Vector2i, size: Vector2i) -> v
 	_overlay_root.add_child(tag)
 
 
+func _add_authored_combat_overlay() -> void:
+	var combat_areas := _authored_placement_definitions(AUTHORING_KIND_COMBAT_AREA)
+	if combat_areas.is_empty():
+		_add_same_environment_combat_overlay(Vector2i(5, 11), Vector2i(11, 7))
+		return
+
+	for combat_area in combat_areas:
+		var origin: Vector2i = combat_area.get("grid", Vector2i(5, 11))
+		var size: Vector2i = combat_area.get("footprint", Vector2i(11, 7))
+		_add_same_environment_combat_overlay(origin, size)
+
+
 func _add_diamond_outline(node_name: String, center: Vector2, color: Color) -> void:
 	var outline := Line2D.new()
 	outline.name = node_name
@@ -893,9 +1041,9 @@ func _is_grid_blocked_by_architecture(grid_position: Vector2i) -> bool:
 	if _is_plaza_road_cell(grid_position):
 		return false
 
-	for blocker in ARCHITECTURE_BLOCKERS:
-		var origin: Vector2i = blocker.origin
-		var footprint: Vector2i = blocker.footprint
+	for blocker in _blocker_definitions():
+		var origin: Vector2i = blocker.get("origin", Vector2i.ZERO)
+		var footprint: Vector2i = blocker.get("footprint", Vector2i.ONE)
 		var within_x: bool = grid_position.x >= origin.x and grid_position.x < origin.x + footprint.x
 		var within_y: bool = grid_position.y >= origin.y and grid_position.y < origin.y + footprint.y
 		if within_x and within_y:
@@ -912,9 +1060,9 @@ func _is_plaza_road_cell(grid_position: Vector2i) -> bool:
 
 
 func _fallback_actor_grid(actor_id: String) -> Vector2i:
-	for actor in ACTOR_DEFINITIONS:
-		if str(actor.id) == actor_id:
-			var default_grid: Vector2i = actor.grid
+	for actor in _actor_definitions():
+		if str(actor.get("id", "")) == actor_id:
+			var default_grid: Vector2i = actor.get("grid", Vector2i.ZERO)
 			if _is_grid_walkable(default_grid):
 				return default_grid
 	return Vector2i.ZERO

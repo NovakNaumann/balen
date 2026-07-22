@@ -60,6 +60,17 @@ cd .\balen
 
 The current working test is intentionally small: boot to title screen, load a 1920x1080 2.5D Crossroads Plaza scene in Aethelgard, select and move DEBUG party markers, inspect Maelin Vossmark's public caravan ledger, toggle the same-scene combat overlay, and quick save/load scene state.
 
+## Manual Map Editing
+
+Crossroads Plaza can be manually shaped in Godot:
+
+1. Open `balen/scenes/testbeds/bootstrap_graybox.tscn`.
+2. Expand `MapAuthoring`.
+3. Move, duplicate, rename, or resize `PlazaAuthoringNode` children under `Buildings`, `Tents`, `Routes`, `Spawns`, `Crowd`, `Banners`, and `CombatAreas`.
+4. Use `grid_position` and `footprint` for tile placement. For buildings and walls, enable `blocks_movement` so click-to-move respects the visible footprint.
+
+The light road and grey sidewalk base is still procedurally generated for this pass. The manually authored nodes control the physical plaza pieces layered over it.
+
 Working test controls:
 
 - Left click: select a DEBUG party member or inspect evidence.

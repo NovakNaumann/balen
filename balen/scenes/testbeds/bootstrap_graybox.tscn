@@ -1,6 +1,401 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/testbeds/bootstrap_graybox.gd" id="1_graybox"]
+[ext_resource type="Script" path="res://scripts/world/plaza_authoring_node.gd" id="2_authoring"]
 
 [node name="BootstrapGraybox" type="Node2D"]
 script = ExtResource("1_graybox")
+
+[node name="MapAuthoring" type="Node2D" parent="."]
+
+[node name="Spawns" type="Node2D" parent="MapAuthoring"]
+
+[node name="DEBUG Knight" type="Node2D" parent="MapAuthoring/Spawns"]
+script = ExtResource("2_authoring")
+kind = 6
+grid_position = Vector2i(-2, 20)
+display_name = "DEBUG Knight"
+actor_id = "debug.knight"
+color = Color(0.28, 0.42, 0.58, 1)
+
+[node name="DEBUG Runescribe" type="Node2D" parent="MapAuthoring/Spawns"]
+script = ExtResource("2_authoring")
+kind = 6
+grid_position = Vector2i(-1, 20)
+display_name = "DEBUG Runescribe"
+actor_id = "debug.runescribe"
+color = Color(0.46, 0.31, 0.59, 1)
+
+[node name="DEBUG Slayer Scout" type="Node2D" parent="MapAuthoring/Spawns"]
+script = ExtResource("2_authoring")
+kind = 6
+grid_position = Vector2i(0, 20)
+display_name = "DEBUG Slayer-Scout"
+actor_id = "debug.slayer_scout"
+color = Color(0.32, 0.49, 0.35, 1)
+
+[node name="DEBUG Fourth Slot" type="Node2D" parent="MapAuthoring/Spawns"]
+script = ExtResource("2_authoring")
+kind = 6
+grid_position = Vector2i(1, 20)
+display_name = "DEBUG Fourth Slot"
+actor_id = "debug.fourth_slot"
+color = Color(0.56, 0.32, 0.27, 1)
+
+[node name="Routes" type="Node2D" parent="MapAuthoring"]
+
+[node name="Aethelgard City" type="Node2D" parent="MapAuthoring/Routes"]
+script = ExtResource("2_authoring")
+kind = 5
+grid_position = Vector2i(0, 24)
+display_name = "Aethelgard City"
+color = Color(0.73, 0.65, 0.5, 1)
+
+[node name="The Ringmarket" type="Node2D" parent="MapAuthoring/Routes"]
+script = ExtResource("2_authoring")
+kind = 5
+grid_position = Vector2i(12, 7)
+display_name = "The Ringmarket"
+color = Color(0.79, 0.55, 0.31, 1)
+
+[node name="Slayers Guild HQ" type="Node2D" parent="MapAuthoring/Routes"]
+script = ExtResource("2_authoring")
+kind = 5
+grid_position = Vector2i(-12, 7)
+display_name = "Slayers Guild HQ"
+color = Color(0.45, 0.46, 0.42, 1)
+
+[node name="Citadel Training" type="Node2D" parent="MapAuthoring/Routes"]
+script = ExtResource("2_authoring")
+kind = 5
+grid_position = Vector2i(7, -23)
+display_name = "Citadel Training"
+color = Color(0.38, 0.48, 0.66, 1)
+
+[node name="Citadel Archives" type="Node2D" parent="MapAuthoring/Routes"]
+script = ExtResource("2_authoring")
+kind = 5
+grid_position = Vector2i(-7, -23)
+display_name = "Citadel Archives"
+color = Color(0.56, 0.49, 0.37, 1)
+
+[node name="Stable Yard" type="Node2D" parent="MapAuthoring/Routes"]
+script = ExtResource("2_authoring")
+kind = 5
+grid_position = Vector2i(12, 16)
+display_name = "Stable Yard"
+color = Color(0.55, 0.36, 0.22, 1)
+
+[node name="Buildings" type="Node2D" parent="MapAuthoring"]
+
+[node name="Left Ring City Facade A" type="Node2D" parent="MapAuthoring/Buildings"]
+script = ExtResource("2_authoring")
+kind = 3
+grid_position = Vector2i(-18, -14)
+footprint = Vector2i(5, 7)
+height_tiles = 4.2
+display_name = "Left Ring City Facade A"
+color = Color(0.69, 0.64, 0.54, 1)
+roof_color = Color(0.12, 0.27, 0.43, 1)
+blocks_movement = true
+
+[node name="Left Ring City Facade B" type="Node2D" parent="MapAuthoring/Buildings"]
+script = ExtResource("2_authoring")
+kind = 3
+grid_position = Vector2i(-18, -5)
+footprint = Vector2i(5, 8)
+height_tiles = 4.9
+display_name = "Left Ring City Facade B"
+color = Color(0.63, 0.56, 0.45, 1)
+roof_color = Color(0.18, 0.34, 0.48, 1)
+blocks_movement = true
+
+[node name="Left Ring City Facade C" type="Node2D" parent="MapAuthoring/Buildings"]
+script = ExtResource("2_authoring")
+kind = 3
+grid_position = Vector2i(-18, 5)
+footprint = Vector2i(5, 8)
+height_tiles = 4.4
+display_name = "Left Ring City Facade C"
+color = Color(0.66, 0.59, 0.48, 1)
+roof_color = Color(0.4, 0.25, 0.19, 1)
+blocks_movement = true
+
+[node name="Left Ring City Facade D" type="Node2D" parent="MapAuthoring/Buildings"]
+script = ExtResource("2_authoring")
+kind = 3
+grid_position = Vector2i(-18, 15)
+footprint = Vector2i(5, 7)
+height_tiles = 4.0
+display_name = "Left Ring City Facade D"
+color = Color(0.7, 0.62, 0.5, 1)
+roof_color = Color(0.2, 0.4, 0.38, 1)
+blocks_movement = true
+
+[node name="Right Ring City Facade A" type="Node2D" parent="MapAuthoring/Buildings"]
+script = ExtResource("2_authoring")
+kind = 3
+grid_position = Vector2i(13, -14)
+footprint = Vector2i(5, 7)
+height_tiles = 4.3
+display_name = "Right Ring City Facade A"
+color = Color(0.7, 0.65, 0.55, 1)
+roof_color = Color(0.14, 0.31, 0.46, 1)
+blocks_movement = true
+
+[node name="Right Ring City Facade B" type="Node2D" parent="MapAuthoring/Buildings"]
+script = ExtResource("2_authoring")
+kind = 3
+grid_position = Vector2i(13, -5)
+footprint = Vector2i(5, 8)
+height_tiles = 5.1
+display_name = "Right Ring City Facade B"
+color = Color(0.61, 0.55, 0.45, 1)
+roof_color = Color(0.18, 0.35, 0.5, 1)
+blocks_movement = true
+
+[node name="Right Ring City Facade C" type="Node2D" parent="MapAuthoring/Buildings"]
+script = ExtResource("2_authoring")
+kind = 3
+grid_position = Vector2i(13, 5)
+footprint = Vector2i(5, 8)
+height_tiles = 4.6
+display_name = "Right Ring City Facade C"
+color = Color(0.68, 0.61, 0.5, 1)
+roof_color = Color(0.44, 0.27, 0.17, 1)
+blocks_movement = true
+
+[node name="Right Ring City Facade D" type="Node2D" parent="MapAuthoring/Buildings"]
+script = ExtResource("2_authoring")
+kind = 3
+grid_position = Vector2i(13, 15)
+footprint = Vector2i(5, 7)
+height_tiles = 4.1
+display_name = "Right Ring City Facade D"
+color = Color(0.66, 0.6, 0.5, 1)
+roof_color = Color(0.4, 0.24, 0.47, 1)
+blocks_movement = true
+
+[node name="Lower Foreground Dome Left" type="Node2D" parent="MapAuthoring/Buildings"]
+script = ExtResource("2_authoring")
+kind = 3
+grid_position = Vector2i(-15, 24)
+footprint = Vector2i(6, 4)
+height_tiles = 4.6
+display_name = "Lower Foreground Dome Left"
+color = Color(0.16, 0.31, 0.46, 1)
+roof_color = Color(0.08, 0.22, 0.38, 1)
+blocks_movement = true
+
+[node name="Lower Foreground Arcade" type="Node2D" parent="MapAuthoring/Buildings"]
+script = ExtResource("2_authoring")
+kind = 3
+grid_position = Vector2i(-6, 24)
+footprint = Vector2i(12, 4)
+height_tiles = 3.9
+display_name = "Lower Foreground Arcade"
+color = Color(0.67, 0.61, 0.51, 1)
+roof_color = Color(0.36, 0.23, 0.17, 1)
+blocks_movement = true
+
+[node name="Lower Foreground Dome Right" type="Node2D" parent="MapAuthoring/Buildings"]
+script = ExtResource("2_authoring")
+kind = 3
+grid_position = Vector2i(9, 24)
+footprint = Vector2i(6, 4)
+height_tiles = 4.6
+display_name = "Lower Foreground Dome Right"
+color = Color(0.18, 0.34, 0.47, 1)
+roof_color = Color(0.08, 0.24, 0.39, 1)
+blocks_movement = true
+
+[node name="Slayers Guild Plaza Front" type="Node2D" parent="MapAuthoring/Buildings"]
+script = ExtResource("2_authoring")
+kind = 3
+grid_position = Vector2i(-14, -1)
+footprint = Vector2i(3, 5)
+height_tiles = 3.7
+display_name = "Slayers Guild Plaza Front"
+color = Color(0.58, 0.56, 0.5, 1)
+roof_color = Color(0.16, 0.18, 0.18, 1)
+awning_color = Color(0.3, 0.32, 0.31, 1)
+blocks_movement = true
+
+[node name="Left Ringmarket Row" type="Node2D" parent="MapAuthoring/Buildings"]
+script = ExtResource("2_authoring")
+kind = 3
+grid_position = Vector2i(-13, 13)
+footprint = Vector2i(3, 5)
+height_tiles = 3.2
+display_name = "Left Ringmarket Row"
+color = Color(0.66, 0.58, 0.46, 1)
+roof_color = Color(0.43, 0.25, 0.18, 1)
+awning_color = Color(0.54, 0.34, 0.22, 1)
+blocks_movement = true
+
+[node name="Permit Offices Arcade" type="Node2D" parent="MapAuthoring/Buildings"]
+script = ExtResource("2_authoring")
+kind = 3
+grid_position = Vector2i(-12, 17)
+footprint = Vector2i(4, 4)
+height_tiles = 3.5
+display_name = "Permit Offices Arcade"
+color = Color(0.7, 0.64, 0.52, 1)
+roof_color = Color(0.16, 0.31, 0.46, 1)
+awning_color = Color(0.11, 0.22, 0.49, 1)
+blocks_movement = true
+
+[node name="Ringmarket Plaza Front" type="Node2D" parent="MapAuthoring/Buildings"]
+script = ExtResource("2_authoring")
+kind = 3
+grid_position = Vector2i(11, -1)
+footprint = Vector2i(3, 5)
+height_tiles = 3.6
+display_name = "Ringmarket Plaza Front"
+color = Color(0.68, 0.61, 0.5, 1)
+roof_color = Color(0.48, 0.3, 0.17, 1)
+awning_color = Color(0.73, 0.45, 0.18, 1)
+blocks_movement = true
+
+[node name="Stable Yard Plaza Front" type="Node2D" parent="MapAuthoring/Buildings"]
+script = ExtResource("2_authoring")
+kind = 3
+grid_position = Vector2i(10, 18)
+footprint = Vector2i(4, 5)
+height_tiles = 3.1
+display_name = "Stable Yard Plaza Front"
+color = Color(0.61, 0.5, 0.39, 1)
+roof_color = Color(0.22, 0.4, 0.34, 1)
+awning_color = Color(0.25, 0.45, 0.36, 1)
+blocks_movement = true
+
+[node name="Tents" type="Node2D" parent="MapAuthoring"]
+
+[node name="Ringmarket Blue Awning" type="Node2D" parent="MapAuthoring/Tents"]
+script = ExtResource("2_authoring")
+kind = 4
+grid_position = Vector2i(8, -3)
+display_name = "Ringmarket Blue Awning"
+color = Color(0.18, 0.29, 0.58, 1)
+
+[node name="Ringmarket Amber Awning" type="Node2D" parent="MapAuthoring/Tents"]
+script = ExtResource("2_authoring")
+kind = 4
+grid_position = Vector2i(8, 2)
+display_name = "Ringmarket Amber Awning"
+color = Color(0.72, 0.43, 0.18, 1)
+
+[node name="Lower Blue Market Stall" type="Node2D" parent="MapAuthoring/Tents"]
+script = ExtResource("2_authoring")
+kind = 4
+grid_position = Vector2i(9, 14)
+display_name = "Lower Blue Market Stall"
+color = Color(0.16, 0.27, 0.55, 1)
+
+[node name="Lower Violet Market Stall" type="Node2D" parent="MapAuthoring/Tents"]
+script = ExtResource("2_authoring")
+kind = 4
+grid_position = Vector2i(7, 17)
+display_name = "Lower Violet Market Stall"
+color = Color(0.48, 0.29, 0.5, 1)
+
+[node name="Caravan Permit Desk" type="Node2D" parent="MapAuthoring/Tents"]
+script = ExtResource("2_authoring")
+kind = 4
+grid_position = Vector2i(-9, 11)
+display_name = "Caravan Permit Desk"
+color = Color(0.4, 0.25, 0.13, 1)
+
+[node name="Stable Tack Awning" type="Node2D" parent="MapAuthoring/Tents"]
+script = ExtResource("2_authoring")
+kind = 4
+grid_position = Vector2i(8, 18)
+display_name = "Stable Tack Awning"
+color = Color(0.25, 0.45, 0.36, 1)
+
+[node name="Slayer Notice Awning" type="Node2D" parent="MapAuthoring/Tents"]
+script = ExtResource("2_authoring")
+kind = 4
+grid_position = Vector2i(-9, 4)
+display_name = "Slayer Notice Awning"
+color = Color(0.35, 0.36, 0.34, 1)
+
+[node name="Left Cloth Merchant" type="Node2D" parent="MapAuthoring/Tents"]
+script = ExtResource("2_authoring")
+kind = 4
+grid_position = Vector2i(-9, 13)
+display_name = "Left Cloth Merchant"
+color = Color(0.55, 0.35, 0.22, 1)
+
+[node name="Left Food Seller" type="Node2D" parent="MapAuthoring/Tents"]
+script = ExtResource("2_authoring")
+kind = 4
+grid_position = Vector2i(-8, 18)
+display_name = "Left Food Seller"
+color = Color(0.22, 0.44, 0.34, 1)
+
+[node name="Crowd" type="Node2D" parent="MapAuthoring"]
+
+[node name="Crowd North One" type="Node2D" parent="MapAuthoring/Crowd"]
+script = ExtResource("2_authoring")
+kind = 7
+grid_position = Vector2i(-1, -18)
+color = Color(0.22, 0.17, 0.16, 1)
+
+[node name="Crowd West Exit" type="Node2D" parent="MapAuthoring/Crowd"]
+script = ExtResource("2_authoring")
+kind = 7
+grid_position = Vector2i(-7, 8)
+color = Color(0.30, 0.17, 0.18, 1)
+
+[node name="Crowd East Exit" type="Node2D" parent="MapAuthoring/Crowd"]
+script = ExtResource("2_authoring")
+kind = 7
+grid_position = Vector2i(7, 8)
+color = Color(0.30, 0.17, 0.18, 1)
+
+[node name="Crowd South One" type="Node2D" parent="MapAuthoring/Crowd"]
+script = ExtResource("2_authoring")
+kind = 7
+grid_position = Vector2i(2, 19)
+color = Color(0.25, 0.17, 0.23, 1)
+
+[node name="Banners" type="Node2D" parent="MapAuthoring"]
+
+[node name="Banner West Road" type="Node2D" parent="MapAuthoring/Banners"]
+script = ExtResource("2_authoring")
+kind = 8
+grid_position = Vector2i(-7, 3)
+display_name = "Blue Gold Civic Banner"
+color = Color(0.12, 0.22, 0.5, 1)
+
+[node name="Banner East Road" type="Node2D" parent="MapAuthoring/Banners"]
+script = ExtResource("2_authoring")
+kind = 8
+grid_position = Vector2i(7, 3)
+display_name = "Blue Gold Civic Banner"
+color = Color(0.12, 0.22, 0.5, 1)
+
+[node name="Banner South West" type="Node2D" parent="MapAuthoring/Banners"]
+script = ExtResource("2_authoring")
+kind = 8
+grid_position = Vector2i(-5, 20)
+display_name = "Blue Gold Civic Banner"
+color = Color(0.12, 0.22, 0.5, 1)
+
+[node name="Banner South East" type="Node2D" parent="MapAuthoring/Banners"]
+script = ExtResource("2_authoring")
+kind = 8
+grid_position = Vector2i(5, 20)
+display_name = "Blue Gold Civic Banner"
+color = Color(0.12, 0.22, 0.5, 1)
+
+[node name="CombatAreas" type="Node2D" parent="MapAuthoring"]
+
+[node name="Same Scene Combat Test Area" type="Node2D" parent="MapAuthoring/CombatAreas"]
+script = ExtResource("2_authoring")
+kind = 9
+grid_position = Vector2i(5, 11)
+footprint = Vector2i(11, 7)
+display_name = "Same Scene Combat Test Area"
+color = Color(0.2, 0.55, 0.78, 0.6)

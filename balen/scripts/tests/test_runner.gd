@@ -11,6 +11,7 @@ func _initialize() -> void:
 	_expect_file("res://scripts/autoload/GameState.gd", failures)
 	_expect_file("res://scripts/autoload/SaveService.gd", failures)
 	_expect_file("res://scripts/autoload/DebugService.gd", failures)
+	_expect_file("res://scripts/world/plaza_authoring_node.gd", failures)
 	_expect_file("res://source_data/voyage/source_manifest.json", failures)
 	_expect_file("res://source_data/voyage/balen_35_low_hp_d20_known_patch.json", failures)
 	_expect_external_file(ProjectSettings.globalize_path("res://../docs/Balen_Codex_Playable_Test_Phase_Plan.md"), failures)
@@ -72,6 +73,17 @@ func _initialize() -> void:
 	var graybox_scene: Variant = load("res://scenes/testbeds/bootstrap_graybox.tscn")
 	if graybox_scene == null:
 		failures.append("Bootstrap graybox scene failed to load.")
+	else:
+		var graybox_instance: Node = graybox_scene.instantiate()
+		if graybox_instance.get_node_or_null("MapAuthoring/Buildings") == null:
+			failures.append("Bootstrap graybox scene is missing editable building authoring nodes.")
+		if graybox_instance.get_node_or_null("MapAuthoring/Routes/The Ringmarket") == null:
+			failures.append("Bootstrap graybox scene is missing the Ringmarket route authoring node.")
+		if graybox_instance.get_node_or_null("MapAuthoring/CombatAreas/Same Scene Combat Test Area") == null:
+			failures.append("Bootstrap graybox scene is missing the editable combat area authoring node.")
+		if graybox_instance.has_method("_authoring_nodes") and graybox_instance.call("_authoring_nodes", 3).size() < 10:
+			failures.append("Bootstrap graybox should expose editable architecture authoring nodes.")
+		graybox_instance.queue_free()
 
 	var graybox_script: Variant = load("res://scripts/testbeds/bootstrap_graybox.gd")
 	if graybox_script == null:
