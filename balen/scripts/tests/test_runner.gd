@@ -105,6 +105,8 @@ func _initialize() -> void:
 		var front_anchor: Vector2 = graybox._authoring_position_from_grid(Vector2i(0, 1))
 		if graybox._depth_z(front_anchor, 0) <= graybox._depth_z(back_anchor, 4):
 			failures.append("Foreground objects should sort above the highest local layer of background objects.")
+		if graybox.LAYER_ROAD >= graybox._depth_z(graybox._authoring_position_from_grid(Vector2i(0, -24)), 0):
+			failures.append("Road and sidewalk layers should remain below authored objects.")
 		if not graybox._is_grid_walkable(Vector2i(0, 0)):
 			failures.append("Central plaza tile should remain walkable.")
 		if not graybox._is_grid_walkable(Vector2i(-12, 7)):

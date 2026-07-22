@@ -74,6 +74,7 @@ Ground authoring uses broad editable regions: road nodes are the light plaza rou
 Viewport movement is tile-snapped: dragging a `PlazaAuthoringNode` with Godot's move tool updates its `grid_position` to the nearest isometric tile.
 Building nodes also preview their vertical 2.5D volume in the editor, so leave space for the orange/tall volume outline, not only the flat red footprint.
 Runtime depth sorting uses each object's lower footprint anchor plus small face layers, so objects placed lower/front in the isometric view should render over objects behind them.
+Roads, sidewalks, masonry fill, and ring markings are fixed bottom layers; market tents and frontage awnings repeat as tile modules instead of stretching one block across a footprint.
 
 Working test controls:
 

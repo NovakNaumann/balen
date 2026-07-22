@@ -8,6 +8,13 @@ const FLOOR_HALF_EXTENTS := Vector2i(14, 24)
 const FOUNTAIN_GRID := Vector2i(0, -6)
 const EAST_WEST_ROAD_Y := 7
 const EVIDENCE_GRID := Vector2i(-9, 11)
+const LAYER_BACKGROUND := -20000
+const LAYER_WATER := -12000
+const LAYER_BOUNDARY := -11000
+const LAYER_FOUNDATION := -10900
+const LAYER_SIDEWALK := -10800
+const LAYER_ROAD := -10700
+const LAYER_GROUND_DETAIL := -10600
 const DEPTH_RIGHT_FACE := 0
 const DEPTH_LEFT_FACE := 1
 const DEPTH_TOP_FACE := 2
@@ -105,7 +112,7 @@ func _build_scene() -> void:
 	background.color = Color(0.09, 0.11, 0.105)
 	background.size = DESIGN_RESOLUTION * 4.0
 	background.position = -background.size * 0.5
-	background.z_index = -1000
+	background.z_index = LAYER_BACKGROUND
 	add_child(background)
 
 	_world_root = Node2D.new()
@@ -558,7 +565,7 @@ func _add_architecture_foundation_fill() -> void:
 				foundation.name = "Architecture Foundation %d,%d" % [x, y]
 				foundation.polygon = _diamond(center)
 				foundation.color = Color(0.32, 0.31, 0.27, 0.96)
-				foundation.z_index = int(center.y) - 4
+				foundation.z_index = LAYER_FOUNDATION
 				_world_root.add_child(foundation)
 
 
@@ -574,7 +581,7 @@ func _add_nonwalkable_boundary_fill() -> void:
 			fill.name = "Ring City Edge Masonry %d,%d" % [x, y]
 			fill.polygon = _diamond(center)
 			fill.color = Color(0.28, 0.29, 0.26, 0.95) if _is_grid_blocked_by_architecture(grid_position) else Color(0.22, 0.25, 0.23, 0.90)
-			fill.z_index = int(center.y) - 6
+			fill.z_index = LAYER_BOUNDARY
 			_world_root.add_child(fill)
 
 
@@ -590,20 +597,20 @@ func _add_diamond_floor(origin: Vector2i, half_extents: Vector2i, color: Color, 
 			tile.name = "%s %d,%d" % [node_name, x, y]
 			tile.polygon = _diamond(tile_position)
 			tile.color = color.lightened(0.08 if (x + y) % 2 == 0 else 0.0)
-			tile.z_index = int(tile_position.y)
+			tile.z_index = LAYER_SIDEWALK
 			_world_root.add_child(tile)
 
 
 func _add_authored_ground_tiles() -> void:
 	for foundation in _authored_placement_definitions(AUTHORING_KIND_FOUNDATION):
-		_add_authored_ground_placement(foundation, "Foundation", 0)
+		_add_authored_ground_placement(foundation, "Foundation", LAYER_FOUNDATION)
 	for sidewalk in _authored_placement_definitions(AUTHORING_KIND_SIDEWALK):
-		_add_authored_ground_placement(sidewalk, "Sidewalk", 1)
+		_add_authored_ground_placement(sidewalk, "Sidewalk", LAYER_SIDEWALK)
 	for road in _authored_placement_definitions(AUTHORING_KIND_ROAD):
-		_add_authored_ground_placement(road, "Road", 2)
+		_add_authored_ground_placement(road, "Road", LAYER_ROAD)
 
 
-func _add_authored_ground_placement(placement: Dictionary, suffix: String, z_offset: int) -> void:
+func _add_authored_ground_placement(placement: Dictionary, suffix: String, layer_z: int) -> void:
 	var origin: Vector2i = placement.get("grid", Vector2i.ZERO)
 	var footprint: Vector2i = placement.get("footprint", Vector2i.ONE)
 	var base_color: Color = placement.get("color", Color(0.61, 0.56, 0.48))
@@ -619,7 +626,7 @@ func _add_authored_ground_placement(placement: Dictionary, suffix: String, z_off
 			tile.name = "%s %s %d,%d" % [placement_name, suffix, x, y]
 			tile.polygon = _diamond(center)
 			tile.color = base_color.lightened(0.08 if (x + y) % 2 == 0 else 0.0)
-			tile.z_index = int(center.y) + z_offset
+			tile.z_index = layer_z
 			_world_root.add_child(tile)
 
 
@@ -642,12 +649,12 @@ func _add_ring_city_plaza_bands() -> void:
 			ring_tile.name = "Ring City Plaza Band %d,%d" % [x, y]
 			ring_tile.polygon = _diamond(center)
 			ring_tile.color = Color(0.68, 0.61, 0.48, 0.96) if is_outer_ring else Color(0.79, 0.73, 0.59, 0.96)
-			ring_tile.z_index = int(center.y) + 2
+			ring_tile.z_index = LAYER_GROUND_DETAIL
 			_world_root.add_child(ring_tile)
 
 	var fountain_center := _iso(FOUNTAIN_GRID)
-	_add_screen_ellipse_outline("Inner fountain traffic ring", fountain_center, 440.0, 214.0, Color(0.90, 0.78, 0.45, 0.72), 4.0, int(fountain_center.y) + 42)
-	_add_screen_ellipse_outline("Outer civic plaza ring", fountain_center, 860.0, 418.0, Color(0.72, 0.62, 0.42, 0.58), 5.0, int(fountain_center.y) + 36)
+	_add_screen_ellipse_outline("Inner fountain traffic ring", fountain_center, 440.0, 214.0, Color(0.90, 0.78, 0.45, 0.72), 4.0, LAYER_GROUND_DETAIL)
+	_add_screen_ellipse_outline("Outer civic plaza ring", fountain_center, 860.0, 418.0, Color(0.72, 0.62, 0.42, 0.58), 5.0, LAYER_GROUND_DETAIL)
 
 
 func _add_radial_roads() -> void:
@@ -664,7 +671,7 @@ func _add_radial_roads() -> void:
 				tile.name = "Crossroads Fountain Boulevard %d,%d" % [x, y]
 				tile.polygon = _diamond(center)
 				tile.color = Color(0.80, 0.76, 0.67, 0.94) if on_diagonal_spoke else Color(0.82, 0.78, 0.66, 0.96)
-				tile.z_index = int(center.y) + 1
+				tile.z_index = LAYER_ROAD
 				_world_root.add_child(tile)
 
 
@@ -677,7 +684,7 @@ func _add_outer_canals_and_bridges() -> void:
 			water.name = "Backdrop Ring Canal %s" % str(grid_position)
 			water.polygon = _diamond(center)
 			water.color = Color(0.13, 0.39, 0.54, 0.82)
-			water.z_index = int(center.y) - 10
+			water.z_index = LAYER_WATER
 			_world_root.add_child(water)
 
 	for grid_position in [Vector2i(0, -28), Vector2i(0, 28), Vector2i(-11, -28), Vector2i(11, 28)]:
@@ -807,7 +814,7 @@ func _add_market_tents() -> void:
 		var footprint: Vector2i = tent.get("footprint", Vector2i.ONE)
 		var height := float(tent.get("height", 0.85))
 		var color: Color = tent.get("color", Color(0.35, 0.26, 0.20))
-		_add_isometric_block(str(tent.get("name", "Market Tent")), grid_position, footprint, height, color)
+		_add_repeated_isometric_blocks(str(tent.get("name", "Market Tent")), grid_position, footprint, height, color)
 
 
 func _add_civic_banners() -> void:
@@ -891,7 +898,14 @@ func _add_plaza_building(node_name: String, origin: Vector2i, footprint: Vector2
 
 
 func _add_frontage_awning(node_name: String, origin: Vector2i, footprint: Vector2i, color: Color) -> void:
-	_add_isometric_block(node_name, origin, footprint, 0.55, color)
+	_add_repeated_isometric_blocks(node_name, origin, footprint, 0.55, color)
+
+
+func _add_repeated_isometric_blocks(node_name: String, origin: Vector2i, footprint: Vector2i, height_tiles: float, color: Color) -> void:
+	for x in range(footprint.x):
+		for y in range(footprint.y):
+			var cell_origin := origin + Vector2i(x, y)
+			_add_isometric_block("%s Module %d,%d" % [node_name, x, y], cell_origin, Vector2i.ONE, height_tiles, color)
 
 
 func _add_roof_cap(node_name: String, origin: Vector2i, footprint: Vector2i, height_tiles: float, color: Color) -> void:
