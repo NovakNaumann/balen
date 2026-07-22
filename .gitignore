@@ -1,0 +1,24 @@
+# Godot 4 local/editor state
+.godot/
+
+# Imported/generated asset data
+.import/
+*.import
+
+# Exported builds and local export configuration
+builds/
+exports/
+export_presets.cfg
+
+# Mono/C# generated files, if the project uses them later
+.mono/
+data_*/
+mono_crash.*.json
+
+# OS and editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*.temp
+

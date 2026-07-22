@@ -1,0 +1,22 @@
+# Keep project text files normalized across machines.
+* text=auto
+
+# Godot scene/resource formats are text by default and should diff cleanly.
+*.gd text
+*.tscn text
+*.tres text
+*.godot text
+*.cfg text
+*.json text
+
+# Common binary assets.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ogg binary
+*.wav binary
+*.mp3 binary
+*.ttf binary
+*.otf binary
+
