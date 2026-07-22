@@ -73,6 +73,17 @@ func _initialize() -> void:
 	if graybox_scene == null:
 		failures.append("Bootstrap graybox scene failed to load.")
 
+	var graybox_script: Variant = load("res://scripts/testbeds/bootstrap_graybox.gd")
+	if graybox_script == null:
+		failures.append("Bootstrap graybox script failed to load.")
+	else:
+		var graybox: Node = graybox_script.new()
+		if not graybox._is_grid_walkable(Vector2i(0, 0)):
+			failures.append("Central plaza tile should remain walkable.")
+		if graybox._is_grid_walkable(Vector2i(-14, 2)):
+			failures.append("Slayers Guild Plaza Front footprint must block movement.")
+		graybox.queue_free()
+
 	if failures.is_empty():
 		print("BALEN_TESTS_OK")
 		quit(0)

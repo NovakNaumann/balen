@@ -27,6 +27,7 @@ Painterly realism references for early sprite and environment direction:
 - Aethelgard is a city-state and should feel grandiose: streets and plazas must leave breathing room for crowds, mounts, wagons, guards, market flow, and many Balen species.
 - Because Aethelgard is the Ring City, major civic areas should favor circular plazas, ring roads, curved terraces, round fountain basins, and radial boulevards over purely rectangular town-square layouts.
 - Plaza-scale buildings should frame civic space as continuous street walls, guild halls, arcade rows, tower clusters, domes, and attached market fronts. Avoid isolated prop boxes that make large roads feel empty or randomly decorated.
+- Walkable space must agree with visible architecture: walls, guild fronts, arcades, towers, domes, and building foundations block movement, and non-walkable plaza edges should render as masonry/foundations rather than black void.
 - Use painterly realism for placeholder-forward assets: hand-painted material texture, readable silhouettes, warm interior craft detail, blue-gold civic cloth, brass/gold trim, pale stone, and clear species separation.
 - Character sprites should remain 2.5D readable at game scale even when portraits use richer painterly detail.
 - Avoid true 3D cameras, 3D mesh-first environments, free perspective orbit, or physically modeled 3D battle arenas unless a future exception is explicitly approved.

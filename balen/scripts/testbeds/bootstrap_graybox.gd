@@ -24,6 +24,31 @@ const PLAZA_ROUTES := [
 	{"name": "Stable Yard", "grid": Vector2i(12, 16), "color": Color(0.55, 0.36, 0.22)}
 ]
 
+const ARCHITECTURE_BLOCKERS := [
+	{"origin": Vector2i(-18, -14), "footprint": Vector2i(5, 7)},
+	{"origin": Vector2i(-18, -5), "footprint": Vector2i(5, 8)},
+	{"origin": Vector2i(-18, 5), "footprint": Vector2i(5, 8)},
+	{"origin": Vector2i(-18, 15), "footprint": Vector2i(5, 7)},
+	{"origin": Vector2i(13, -14), "footprint": Vector2i(5, 7)},
+	{"origin": Vector2i(13, -5), "footprint": Vector2i(5, 8)},
+	{"origin": Vector2i(13, 5), "footprint": Vector2i(5, 8)},
+	{"origin": Vector2i(13, 15), "footprint": Vector2i(5, 7)},
+	{"origin": Vector2i(-15, 24), "footprint": Vector2i(6, 4)},
+	{"origin": Vector2i(-6, 24), "footprint": Vector2i(12, 4)},
+	{"origin": Vector2i(9, 24), "footprint": Vector2i(6, 4)},
+	{"origin": Vector2i(-14, 2), "footprint": Vector2i(3, 6)},
+	{"origin": Vector2i(-13, 10), "footprint": Vector2i(3, 7)},
+	{"origin": Vector2i(-12, 17), "footprint": Vector2i(4, 4)},
+	{"origin": Vector2i(11, 0), "footprint": Vector2i(3, 7)},
+	{"origin": Vector2i(10, 11), "footprint": Vector2i(4, 8)},
+	{"origin": Vector2i(-11, -18), "footprint": Vector2i(2, 2)},
+	{"origin": Vector2i(-7, -19), "footprint": Vector2i(2, 2)},
+	{"origin": Vector2i(7, -19), "footprint": Vector2i(2, 2)},
+	{"origin": Vector2i(11, -18), "footprint": Vector2i(2, 2)},
+	{"origin": Vector2i(-12, 18), "footprint": Vector2i(2, 2)},
+	{"origin": Vector2i(12, 18), "footprint": Vector2i(2, 2)}
+]
+
 var _camera: Camera2D
 var _world_root: Node2D
 var _overlay_root: Node2D
@@ -111,6 +136,8 @@ func _restore_scene_state_from_game_state() -> void:
 
 		var saved_state: Dictionary = saved_actor_states[actor_id]
 		var grid_position := _vector2i_from_array(saved_state.get("grid", []), _actor_states[actor_id].grid)
+		if not _is_grid_walkable(grid_position):
+			grid_position = _fallback_actor_grid(actor_id)
 		_actor_states[actor_id].grid = grid_position
 		_actor_states[actor_id].target_grid = grid_position
 		_actor_states[actor_id].world_position = _iso(grid_position)
@@ -144,6 +171,8 @@ func _rebuild_world() -> void:
 		child.queue_free()
 
 	_actor_nodes.clear()
+	_add_architecture_foundation_fill()
+	_add_nonwalkable_boundary_fill()
 	_add_diamond_floor(Vector2i.ZERO, FLOOR_HALF_EXTENTS, Color(0.61, 0.56, 0.48), "Crossroads Plaza Stone")
 	_add_ring_city_plaza_bands()
 	_add_radial_roads()
@@ -339,6 +368,10 @@ func _set_actor_target(actor_id: String, target_grid: Vector2i) -> void:
 	if not _actor_states.has(actor_id):
 		return
 
+	if not _is_grid_walkable(target_grid):
+		_show_dialog("That tile is blocked by Crossroads Plaza walls, buildings, or test boundary.")
+		return
+
 	_actor_states[actor_id].target_grid = target_grid
 	_show_dialog("%s moving to tile %s." % [_actor_states[actor_id].display_name, str(target_grid)])
 	_write_scene_state_to_game_state()
@@ -376,6 +409,38 @@ func _show_dialog(text: String) -> void:
 
 	_dialog_label.text = text
 	_dialog_panel.visible = true
+
+
+func _add_architecture_foundation_fill() -> void:
+	for blocker in ARCHITECTURE_BLOCKERS:
+		var origin: Vector2i = blocker.origin
+		var footprint: Vector2i = blocker.footprint
+		for x in range(origin.x, origin.x + footprint.x):
+			for y in range(origin.y, origin.y + footprint.y):
+				var grid_position := Vector2i(x, y)
+				var center := _iso(grid_position)
+				var foundation := Polygon2D.new()
+				foundation.name = "Architecture Foundation %d,%d" % [x, y]
+				foundation.polygon = _diamond(center)
+				foundation.color = Color(0.32, 0.31, 0.27, 0.96)
+				foundation.z_index = int(center.y) - 4
+				_world_root.add_child(foundation)
+
+
+func _add_nonwalkable_boundary_fill() -> void:
+	for x in range(-FLOOR_HALF_EXTENTS.x, FLOOR_HALF_EXTENTS.x + 1):
+		for y in range(-FLOOR_HALF_EXTENTS.y, FLOOR_HALF_EXTENTS.y + 1):
+			var grid_position := Vector2i(x, y)
+			if _is_grid_walkable(grid_position):
+				continue
+
+			var center := _iso(grid_position)
+			var fill := Polygon2D.new()
+			fill.name = "Ring City Edge Masonry %d,%d" % [x, y]
+			fill.polygon = _diamond(center)
+			fill.color = Color(0.28, 0.29, 0.26, 0.95) if _is_grid_blocked_by_architecture(grid_position) else Color(0.22, 0.25, 0.23, 0.90)
+			fill.z_index = int(center.y) - 6
+			_world_root.add_child(fill)
 
 
 func _add_diamond_floor(origin: Vector2i, half_extents: Vector2i, color: Color, node_name: String) -> void:
@@ -817,12 +882,34 @@ func _ellipse_points(center: Vector2, radius_x: float, radius_y: float, count: i
 func _is_grid_walkable(grid_position: Vector2i) -> bool:
 	if abs(grid_position.x) > FLOOR_HALF_EXTENTS.x or abs(grid_position.y) > FLOOR_HALF_EXTENTS.y:
 		return false
+	if _is_grid_blocked_by_architecture(grid_position):
+		return false
 
 	var in_grand_boulevard: bool = abs(grid_position.x) <= 5
 	var in_round_plaza: bool = _ring_radius(grid_position) <= 13.4
 	var in_market_apron: bool = abs(grid_position.y - 11) <= 4 and abs(grid_position.x) <= 12
 	var in_citadel_approach: bool = grid_position.y <= FOUNTAIN_GRID.y and abs(grid_position.x) <= 7
 	return in_grand_boulevard or in_round_plaza or in_market_apron or in_citadel_approach
+
+
+func _is_grid_blocked_by_architecture(grid_position: Vector2i) -> bool:
+	for blocker in ARCHITECTURE_BLOCKERS:
+		var origin: Vector2i = blocker.origin
+		var footprint: Vector2i = blocker.footprint
+		var within_x: bool = grid_position.x >= origin.x and grid_position.x < origin.x + footprint.x
+		var within_y: bool = grid_position.y >= origin.y and grid_position.y < origin.y + footprint.y
+		if within_x and within_y:
+			return true
+	return false
+
+
+func _fallback_actor_grid(actor_id: String) -> Vector2i:
+	for actor in ACTOR_DEFINITIONS:
+		if str(actor.id) == actor_id:
+			var default_grid: Vector2i = actor.grid
+			if _is_grid_walkable(default_grid):
+				return default_grid
+	return Vector2i.ZERO
 
 
 func _is_outer_corner(grid_position: Vector2i) -> bool:
