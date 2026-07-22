@@ -20,6 +20,7 @@ func _initialize() -> void:
 	_expect_external_file(ProjectSettings.globalize_path("res://../docs/known_issues.md"), failures)
 	_expect_external_file(ProjectSettings.globalize_path("res://../docs/playtest_checklist.md"), failures)
 	_expect_external_file(ProjectSettings.globalize_path("res://../docs/reference/aethelgard_concept_crossroads_plaza.png"), failures)
+	_expect_external_file(ProjectSettings.globalize_path("res://../docs/reference/aethelgard_concept_crossroads_plaza_circled.png"), failures)
 	_expect_external_file(ProjectSettings.globalize_path("res://../docs/reference/painterly_reference_rookmire_curios.png"), failures)
 	_expect_external_file(ProjectSettings.globalize_path("res://../docs/reference/painterly_reference_aethelgard_jeweler.png"), failures)
 	_expect_external_file(ProjectSettings.globalize_path("res://../docs/reference/painterly_reference_worcen_knight.png"), failures)

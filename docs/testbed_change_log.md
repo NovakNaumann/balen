@@ -20,3 +20,4 @@ This file records implementation assumptions, source decisions, and notable chan
 - Added `docs/Balen_Codex_Playable_Test_Phase_Plan.md` as the current playable-test authority and recorded the Phase 0 governance contract in `README.md`, `docs/decisions.md`, `docs/assumptions.md`, `docs/known_issues.md`, and `docs/playtest_checklist.md`.
 - Pinned Godot to `4.7.1.stable.steam` and documented the mismatch between the phase plan's older embedded source filename/hash and the latest attached Voyage JSON snapshot currently used for validation.
 - Preserved four painterly realism references under `docs/reference/` for early Aethelgard sprite, portrait, species, and material direction.
+- Reframed Crossroads Plaza around the large fountain boulevard/market approach circled in the concept art instead of compressing all of Aethelgard into a tiny map. City rings, canals, and the Citadel are now treated as backdrop/exit context for this prototype slice.

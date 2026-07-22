@@ -4,23 +4,24 @@ const TITLE_SCENE := "res://scenes/ui/title_screen.tscn"
 const DESIGN_RESOLUTION := Vector2(1920.0, 1080.0)
 const TILE_SIZE := Vector2(112.0, 56.0)
 const MOVE_SPEED_PIXELS := 340.0
-const FLOOR_HALF_EXTENTS := Vector2i(7, 5)
-const EVIDENCE_GRID := Vector2i(-3, 1)
+const FLOOR_HALF_EXTENTS := Vector2i(10, 18)
+const FOUNTAIN_GRID := Vector2i(0, -4)
+const EVIDENCE_GRID := Vector2i(-7, 8)
 
 const ACTOR_DEFINITIONS := [
-	{"id": "debug.knight", "name": "DEBUG Knight", "grid": Vector2i(-2, 4), "color": Color(0.28, 0.42, 0.58)},
-	{"id": "debug.runescribe", "name": "DEBUG Runescribe", "grid": Vector2i(-1, 4), "color": Color(0.46, 0.31, 0.59)},
-	{"id": "debug.slayer_scout", "name": "DEBUG Slayer-Scout", "grid": Vector2i(0, 4), "color": Color(0.32, 0.49, 0.35)},
-	{"id": "debug.fourth_slot", "name": "DEBUG Fourth Slot", "grid": Vector2i(1, 4), "color": Color(0.56, 0.32, 0.27)}
+	{"id": "debug.knight", "name": "DEBUG Knight", "grid": Vector2i(-2, 14), "color": Color(0.28, 0.42, 0.58)},
+	{"id": "debug.runescribe", "name": "DEBUG Runescribe", "grid": Vector2i(-1, 14), "color": Color(0.46, 0.31, 0.59)},
+	{"id": "debug.slayer_scout", "name": "DEBUG Slayer-Scout", "grid": Vector2i(0, 14), "color": Color(0.32, 0.49, 0.35)},
+	{"id": "debug.fourth_slot", "name": "DEBUG Fourth Slot", "grid": Vector2i(1, 14), "color": Color(0.56, 0.32, 0.27)}
 ]
 
 const PLAZA_ROUTES := [
-	{"name": "Aethelgard City", "grid": Vector2i(0, 5), "color": Color(0.73, 0.65, 0.50)},
-	{"name": "The Ringmarket", "grid": Vector2i(5, 0), "color": Color(0.79, 0.55, 0.31)},
-	{"name": "Slayers Guild HQ", "grid": Vector2i(-5, 0), "color": Color(0.45, 0.46, 0.42)},
-	{"name": "Citadel Training", "grid": Vector2i(3, -4), "color": Color(0.38, 0.48, 0.66)},
-	{"name": "Citadel Archives", "grid": Vector2i(-3, -4), "color": Color(0.56, 0.49, 0.37)},
-	{"name": "Stable Yard", "grid": Vector2i(5, 3), "color": Color(0.55, 0.36, 0.22)}
+	{"name": "Aethelgard City", "grid": Vector2i(0, 18), "color": Color(0.73, 0.65, 0.50)},
+	{"name": "The Ringmarket", "grid": Vector2i(10, 5), "color": Color(0.79, 0.55, 0.31)},
+	{"name": "Slayers Guild HQ", "grid": Vector2i(-10, 5), "color": Color(0.45, 0.46, 0.42)},
+	{"name": "Citadel Training", "grid": Vector2i(5, -17), "color": Color(0.38, 0.48, 0.66)},
+	{"name": "Citadel Archives", "grid": Vector2i(-5, -17), "color": Color(0.56, 0.49, 0.37)},
+	{"name": "Stable Yard", "grid": Vector2i(9, 12), "color": Color(0.55, 0.36, 0.22)}
 ]
 
 var _camera: Camera2D
@@ -53,14 +54,15 @@ func _process(delta: float) -> void:
 	_handle_keyboard_input()
 	_handle_mouse_input()
 	_update_actor_motion(delta)
+	_update_camera_position()
 
 
 func _build_scene() -> void:
 	var background := ColorRect.new()
 	background.name = "Native1080Background"
 	background.color = Color(0.09, 0.11, 0.105)
-	background.size = DESIGN_RESOLUTION
-	background.position = -DESIGN_RESOLUTION * 0.5
+	background.size = DESIGN_RESOLUTION * 4.0
+	background.position = -background.size * 0.5
 	background.z_index = -1000
 	add_child(background)
 
@@ -157,14 +159,14 @@ func _rebuild_world() -> void:
 	_overlay_root.name = "SameSceneCombatOverlay"
 	_overlay_root.visible = _combat_overlay_visible
 	_world_root.add_child(_overlay_root)
-	_add_same_environment_combat_overlay(Vector2i(0, 1), Vector2i(7, 5))
+	_add_same_environment_combat_overlay(Vector2i(4, 8), Vector2i(9, 7))
 
 	for actor in ACTOR_DEFINITIONS:
 		_add_actor_marker(str(actor.id), str(actor.name), actor.color)
 
 	var label := Label.new()
-	label.text = "Crossroads Plaza, Aethelgard: neutral gateway civic hub"
-	label.position = Vector2(-590.0, -410.0)
+	label.text = "Crossroads Plaza slice: fountain boulevard and market approaches"
+	label.position = _iso(Vector2i(-9, -17)) + Vector2(-80.0, -96.0)
 	label.add_theme_font_size_override("font_size", 24)
 	_world_root.add_child(label)
 
@@ -294,6 +296,22 @@ func _update_actor_motion(delta: float) -> void:
 		_write_scene_state_to_game_state()
 
 
+func _update_camera_position() -> void:
+	if _camera == null or not _actor_states.has(_selected_actor_id):
+		return
+
+	var actor_state: Dictionary = _actor_states[_selected_actor_id]
+	var target_position: Vector2 = actor_state.world_position + Vector2(0.0, -130.0)
+	var top_edge := _iso(Vector2i(0, -FLOOR_HALF_EXTENTS.y - 2)).y - 220.0
+	var bottom_edge := _iso(Vector2i(0, FLOOR_HALF_EXTENTS.y + 2)).y + 120.0
+	var left_edge := _iso(Vector2i(-FLOOR_HALF_EXTENTS.x - 2, 0)).x - 260.0
+	var right_edge := _iso(Vector2i(FLOOR_HALF_EXTENTS.x + 2, 0)).x + 260.0
+	_camera.position = Vector2(
+		clampf(target_position.x, left_edge, right_edge),
+		clampf(target_position.y, top_edge, bottom_edge)
+	)
+
+
 func _try_select_actor(mouse_world: Vector2) -> bool:
 	var closest_actor_id := ""
 	var closest_distance := 99999.0
@@ -346,7 +364,7 @@ func _refresh_hud() -> void:
 	var selected_name := str(_actor_states.get(_selected_actor_id, {}).get("display_name", _selected_actor_id))
 	var evidence_text := "collected" if _evidence_collected else "available"
 	var combat_text := "shown" if _combat_overlay_visible else "hidden"
-	_hud_label.text = "Crossroads Plaza Working Test\nNative target: 1920 x 1080\nSelected: %s\nCaravan ledger: %s\nCombat overlay: %s\nLeft-click select/inspect, right-click move\nTab overlay, F5 save, F9 load, Esc title" % [selected_name, evidence_text, combat_text]
+	_hud_label.text = "Crossroads Plaza Scale Test\nNative target: 1920 x 1080\nSelected: %s\nCaravan ledger: %s\nCombat overlay: %s\nLarge open plaza slice, not full city\nLeft-click select/inspect, right-click move\nTab overlay, F5 save, F9 load, Esc title" % [selected_name, evidence_text, combat_text]
 
 
 func _show_dialog(text: String) -> void:
@@ -379,50 +397,50 @@ func _add_radial_roads() -> void:
 			if not _is_grid_walkable(grid_position):
 				continue
 
-			var on_crossroad: bool = abs(x) <= 1 or abs(y) <= 1 or abs(x - y) <= 1 or abs(x + y) <= 1
-			if on_crossroad:
+			var on_main_boulevard: bool = abs(x) <= 3
+			var on_fountain_apron: bool = abs(x) <= 8 and y >= FOUNTAIN_GRID.y - 4 and y <= FOUNTAIN_GRID.y + 5
+			var on_market_crossing: bool = abs(y - 8) <= 1 and abs(x) <= 9
+			var on_citadel_approach: bool = abs(x) <= 5 and y <= -10
+			if on_main_boulevard or on_fountain_apron or on_market_crossing or on_citadel_approach:
 				var tile := Polygon2D.new()
 				var center := _iso(grid_position)
-				tile.name = "Pale Radial Road %d,%d" % [x, y]
+				tile.name = "Crossroads Fountain Boulevard %d,%d" % [x, y]
 				tile.polygon = _diamond(center)
-				tile.color = Color(0.74, 0.70, 0.62, 0.92)
+				tile.color = Color(0.76, 0.72, 0.64, 0.94)
 				tile.z_index = int(center.y) + 1
 				_world_root.add_child(tile)
 
 
 func _add_outer_canals_and_bridges() -> void:
-	for grid_position in [
-		Vector2i(-7, -1), Vector2i(-7, 0), Vector2i(-7, 1),
-		Vector2i(7, -1), Vector2i(7, 0), Vector2i(7, 1),
-		Vector2i(-1, -5), Vector2i(0, -5), Vector2i(1, -5),
-		Vector2i(-1, 5), Vector2i(0, 5), Vector2i(1, 5)
-	]:
-		var center := _iso(grid_position)
-		var water := Polygon2D.new()
-		water.name = "Outer Canal %s" % str(grid_position)
-		water.polygon = _diamond(center)
-		water.color = Color(0.16, 0.43, 0.56, 0.88)
-		water.z_index = int(center.y)
-		_world_root.add_child(water)
+	for x in range(-9, 10):
+		for y in [-21, 21]:
+			var grid_position := Vector2i(x, y)
+			var center := _iso(grid_position)
+			var water := Polygon2D.new()
+			water.name = "Backdrop Ring Canal %s" % str(grid_position)
+			water.polygon = _diamond(center)
+			water.color = Color(0.13, 0.39, 0.54, 0.82)
+			water.z_index = int(center.y) - 10
+			_world_root.add_child(water)
 
-	for grid_position in [Vector2i(0, -5), Vector2i(0, 5), Vector2i(-7, 0), Vector2i(7, 0)]:
-		_add_isometric_block("Stone Bridge %s" % str(grid_position), grid_position, Vector2i(1, 1), 0.18, Color(0.69, 0.64, 0.54))
+	for grid_position in [Vector2i(0, -21), Vector2i(0, 21), Vector2i(-8, -21), Vector2i(8, 21)]:
+		_add_isometric_block("Distant Stone Bridge %s" % str(grid_position), grid_position, Vector2i(2, 1), 0.18, Color(0.69, 0.64, 0.54))
 
 
 func _add_citadel_axis() -> void:
-	_add_isometric_block("Distant Magi-Knight Citadel Base", Vector2i(0, -6), Vector2i(3, 2), 2.8, Color(0.70, 0.66, 0.56))
-	_add_isometric_block("Distant Magi-Knight Citadel Spire", Vector2i(1, -7), Vector2i(1, 1), 5.2, Color(0.78, 0.75, 0.66))
+	_add_isometric_block("Distant Magi-Knight Citadel Gatehouse", Vector2i(-2, -23), Vector2i(4, 2), 3.1, Color(0.70, 0.66, 0.56))
+	_add_isometric_block("Distant Magi-Knight Citadel Spire", Vector2i(1, -25), Vector2i(1, 1), 6.3, Color(0.78, 0.75, 0.66))
 
 	var banner := Label.new()
-	banner.text = "Magi-Knight Citadel"
-	banner.position = _iso(Vector2i(2, -7)) + Vector2(24.0, -188.0)
+	banner.text = "Citadel backdrop, not walkable city scale"
+	banner.position = _iso(Vector2i(2, -24)) + Vector2(24.0, -216.0)
 	banner.add_theme_font_size_override("font_size", 14)
 	banner.z_index = int(banner.position.y) + 50
 	_world_root.add_child(banner)
 
 
 func _add_central_fountain() -> void:
-	var center := _iso(Vector2i.ZERO)
+	var center := _iso(FOUNTAIN_GRID)
 	var basin := Polygon2D.new()
 	basin.name = "Crossroads Fountain Basin"
 	basin.polygon = PackedVector2Array([
@@ -439,24 +457,28 @@ func _add_central_fountain() -> void:
 	basin.z_index = int(center.y) + 20
 	_world_root.add_child(basin)
 
-	_add_isometric_block("Fountain Stone Tier", Vector2i.ZERO, Vector2i(1, 1), 0.35, Color(0.76, 0.72, 0.63))
-	_add_isometric_block("Fountain Water Jet Placeholder", Vector2i(0, 0), Vector2i(1, 1), 0.95, Color(0.34, 0.70, 0.86))
+	_add_isometric_block("Fountain Stone Tier", FOUNTAIN_GRID, Vector2i(1, 1), 0.35, Color(0.76, 0.72, 0.63))
+	_add_isometric_block("Fountain Water Jet Placeholder", FOUNTAIN_GRID, Vector2i(1, 1), 0.95, Color(0.34, 0.70, 0.86))
 
 
 func _add_market_tents() -> void:
 	for tent in [
-		{"name": "Ringmarket Blue Awning", "grid": Vector2i(4, -1), "color": Color(0.18, 0.29, 0.58)},
-		{"name": "Ringmarket Amber Awning", "grid": Vector2i(5, 1), "color": Color(0.72, 0.43, 0.18)},
+		{"name": "Ringmarket Blue Awning", "grid": Vector2i(8, -2), "color": Color(0.18, 0.29, 0.58)},
+		{"name": "Ringmarket Amber Awning", "grid": Vector2i(9, 1), "color": Color(0.72, 0.43, 0.18)},
+		{"name": "Lower Blue Market Stall", "grid": Vector2i(7, 9), "color": Color(0.16, 0.27, 0.55)},
+		{"name": "Lower Violet Market Stall", "grid": Vector2i(6, 12), "color": Color(0.48, 0.29, 0.50)},
 		{"name": "Caravan Permit Desk", "grid": EVIDENCE_GRID, "color": Color(0.40, 0.25, 0.13)},
-		{"name": "Stable Tack Awning", "grid": Vector2i(4, 3), "color": Color(0.25, 0.45, 0.36)},
-		{"name": "Slayer Notice Awning", "grid": Vector2i(-4, 1), "color": Color(0.35, 0.36, 0.34)}
+		{"name": "Stable Tack Awning", "grid": Vector2i(8, 12), "color": Color(0.25, 0.45, 0.36)},
+		{"name": "Slayer Notice Awning", "grid": Vector2i(-8, 4), "color": Color(0.35, 0.36, 0.34)},
+		{"name": "Left Cloth Merchant", "grid": Vector2i(-8, 9), "color": Color(0.55, 0.35, 0.22)},
+		{"name": "Left Food Seller", "grid": Vector2i(-7, 12), "color": Color(0.22, 0.44, 0.34)}
 	]:
 		var grid_position: Vector2i = tent.grid
 		_add_isometric_block(str(tent.name), grid_position, Vector2i(1, 1), 0.85, tent.color)
 
 
 func _add_civic_banners() -> void:
-	for grid_position in [Vector2i(-2, -2), Vector2i(2, -2), Vector2i(-2, 2), Vector2i(2, 2)]:
+	for grid_position in [Vector2i(-4, -10), Vector2i(4, -10), Vector2i(-4, -1), Vector2i(4, -1), Vector2i(-4, 8), Vector2i(4, 8), Vector2i(-4, 15), Vector2i(4, 15)]:
 		_add_isometric_block("Blue Gold Civic Banner %s" % str(grid_position), grid_position, Vector2i(1, 1), 1.4, Color(0.12, 0.22, 0.50))
 
 
@@ -476,9 +498,11 @@ func _add_route_markers() -> void:
 
 func _add_crowd_markers() -> void:
 	for grid_position in [
-		Vector2i(-1, 0), Vector2i(1, 0), Vector2i(-3, 0), Vector2i(3, 0),
-		Vector2i(0, -2), Vector2i(0, 2), Vector2i(-2, 1), Vector2i(2, -1),
-		Vector2i(-5, 2), Vector2i(5, -2)
+		Vector2i(-1, -10), Vector2i(1, -9), Vector2i(-2, -5), Vector2i(2, -4),
+		Vector2i(-3, -1), Vector2i(3, 0), Vector2i(-2, 3), Vector2i(2, 4),
+		Vector2i(-1, 7), Vector2i(1, 8), Vector2i(-3, 10), Vector2i(3, 11),
+		Vector2i(-2, 14), Vector2i(2, 15), Vector2i(-6, 6), Vector2i(6, 7),
+		Vector2i(-7, 11), Vector2i(7, 10)
 	]:
 		var base := _iso(grid_position) + Vector2(0.0, -12.0)
 		var crowd := Polygon2D.new()
