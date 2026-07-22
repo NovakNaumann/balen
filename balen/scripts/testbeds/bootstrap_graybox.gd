@@ -50,6 +50,7 @@ func _rebuild_world() -> void:
 	_add_isometric_block("Archive Block Placeholder", Vector2i(-4, -1), Vector2i(2, 2), 1.6, Color(0.37, 0.35, 0.31))
 	_add_isometric_block("Market Stall Placeholder", Vector2i(3, 1), Vector2i(3, 2), 1.0, Color(0.50, 0.39, 0.24))
 	_add_isometric_block("Evidence Marker", Vector2i(1, -1), Vector2i(1, 1), 0.45, Color(0.82, 0.68, 0.30))
+	_add_same_environment_combat_overlay(Vector2i(0, 1), Vector2i(7, 5))
 
 	_add_actor_marker("DEBUG Knight", Vector2i(-2, 3), Color(0.28, 0.42, 0.58))
 	_add_actor_marker("DEBUG Runescribe", Vector2i(-1, 3), Color(0.46, 0.31, 0.59))
@@ -57,7 +58,7 @@ func _rebuild_world() -> void:
 	_add_actor_marker("DEBUG Fourth Slot", Vector2i(1, 3), Color(0.56, 0.32, 0.27))
 
 	var label := Label.new()
-	label.text = "2.5D isometric graybox: 2D art layers, fake depth, no 3D camera"
+	label.text = "2.5D isometric graybox: exploration and combat share this environment"
 	label.position = Vector2(-430.0, -330.0)
 	label.add_theme_font_size_override("font_size", 24)
 	_world_root.add_child(label)
@@ -83,7 +84,7 @@ func _build_overlay() -> void:
 	panel.add_child(margin)
 
 	var label := Label.new()
-	label.text = "Milestone 0 2.5D Graybox\nNative target: 1920 x 1080\nQ/E rotate view, wheel zoom, Esc title"
+	label.text = "Milestone 0 2.5D Graybox\nNative target: 1920 x 1080\nCombat overlay stays in-world\nQ/E rotate view, wheel zoom, Esc title"
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.add_theme_font_size_override("font_size", 18)
 	margin.add_child(label)
@@ -179,6 +180,40 @@ func _add_actor_marker(node_name: String, grid_position: Vector2i, color: Color)
 	label.add_theme_font_size_override("font_size", 13)
 	label.z_index = int(base.y) + 5
 	_world_root.add_child(label)
+
+
+func _add_same_environment_combat_overlay(origin: Vector2i, size: Vector2i) -> void:
+	for x in range(origin.x - size.x / 2, origin.x + size.x / 2 + 1):
+		for y in range(origin.y - size.y / 2, origin.y + size.y / 2 + 1):
+			var cell_color := Color(0.20, 0.55, 0.78, 0.34)
+			if x <= origin.x - 2:
+				cell_color = Color(0.23, 0.64, 0.42, 0.42)
+			elif x >= origin.x + 2:
+				cell_color = Color(0.78, 0.34, 0.28, 0.42)
+			_add_diamond_outline("Same Scene Combat Cell %d,%d" % [x, y], _iso(Vector2i(x, y)), cell_color)
+
+	var tag := Label.new()
+	tag.text = "same-scene combat layer"
+	tag.position = _iso(origin + Vector2i(2, -3)) + Vector2(12.0, -10.0)
+	tag.add_theme_font_size_override("font_size", 14)
+	tag.z_index = int(tag.position.y) + 20
+	_world_root.add_child(tag)
+
+
+func _add_diamond_outline(node_name: String, center: Vector2, color: Color) -> void:
+	var outline := Line2D.new()
+	outline.name = node_name
+	outline.width = 2.0
+	outline.closed = true
+	outline.default_color = color
+	outline.points = PackedVector2Array([
+		center + Vector2(0.0, -TILE_SIZE.y * 0.5),
+		center + Vector2(TILE_SIZE.x * 0.5, 0.0),
+		center + Vector2(0.0, TILE_SIZE.y * 0.5),
+		center + Vector2(-TILE_SIZE.x * 0.5, 0.0)
+	])
+	outline.z_index = int(center.y) + 10
+	_world_root.add_child(outline)
 
 
 func _add_polygon(node_name: String, points: PackedVector2Array, color: Color, z: int) -> void:

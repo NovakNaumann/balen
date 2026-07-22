@@ -10,9 +10,10 @@ Read these files before changing code or content:
 
 1. `docs/Balen_Codex_Game_Testbed_Plan.md`
 2. `docs/Balen_World_Canon_Bible.md`
-3. `docs/testbed_change_log.md`
+3. `docs/2_5d_style_reference.md`
+4. `docs/testbed_change_log.md`
 
-The testbed plan defines the milestone order and systems scope. The canon bible defines the lore, terminology, NPC, nation, species, secrecy, and art guardrails.
+The testbed plan defines the milestone order and systems scope. The canon bible defines the lore, terminology, NPC, nation, species, secrecy, and art guardrails. The 2.5D style reference defines how Balen should interpret isometric environment, character, and combat presentation.
 
 ## Current Focus
 

@@ -13,3 +13,4 @@ This file records implementation assumptions, source decisions, and notable chan
 - Added a title screen and a generated graybox Aethelgard placeholder scene. These are debug/testbed placeholders, not approved art.
 - Added headless smoke and content validation scripts. The content validator warns, but does not fail, while the original Voyage JSON is not yet present.
 - Corrected the bootstrap target to native 1920x1080 and changed the graybox from true 3D to a 2.5D/isometric 2D scene with fake depth.
+- Added WAKFU/DOFUS as presentation references for 2.5D isometric art and same-environment tactical combat. This is a directional reference only, not a request to copy assets or UI.
