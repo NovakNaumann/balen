@@ -15,3 +15,5 @@ This file records implementation assumptions, source decisions, and notable chan
 - Corrected the bootstrap target to native 1920x1080 and changed the graybox from true 3D to a 2.5D/isometric 2D scene with fake depth.
 - Added WAKFU/DOFUS as presentation references for 2.5D isometric art and same-environment tactical combat. This is a directional reference only, not a request to copy assets or UI.
 - Added the first working exploration test: party selection, click-to-move on reachable isometric tiles, one public testbed evidence interaction, same-scene combat overlay toggle, and F5/F9 debug save/load.
+- Added the latest Voyage JSON source snapshot under `balen/source_data/voyage/` unchanged and read-only, updated its manifest hash/size, and preserved the Aethelgard concept art under `docs/reference/`.
+- Reworked the playable test scene into Crossroads Plaza of Aethelgard, using public source cues: neutral circular heart-city, gateway/civic hub, route links to city/ringmarket/guild/citadel/archive/stable yard, and Maelin Vossmark's public caravan ledger.

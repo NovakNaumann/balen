@@ -4,14 +4,23 @@ const TITLE_SCENE := "res://scenes/ui/title_screen.tscn"
 const DESIGN_RESOLUTION := Vector2(1920.0, 1080.0)
 const TILE_SIZE := Vector2(112.0, 56.0)
 const MOVE_SPEED_PIXELS := 340.0
-const FLOOR_HALF_EXTENTS := Vector2i(4, 3)
-const EVIDENCE_GRID := Vector2i(1, -1)
+const FLOOR_HALF_EXTENTS := Vector2i(7, 5)
+const EVIDENCE_GRID := Vector2i(-3, 1)
 
 const ACTOR_DEFINITIONS := [
-	{"id": "debug.knight", "name": "DEBUG Knight", "grid": Vector2i(-2, 3), "color": Color(0.28, 0.42, 0.58)},
-	{"id": "debug.runescribe", "name": "DEBUG Runescribe", "grid": Vector2i(-1, 3), "color": Color(0.46, 0.31, 0.59)},
-	{"id": "debug.slayer_scout", "name": "DEBUG Slayer-Scout", "grid": Vector2i(0, 3), "color": Color(0.32, 0.49, 0.35)},
-	{"id": "debug.fourth_slot", "name": "DEBUG Fourth Slot", "grid": Vector2i(1, 3), "color": Color(0.56, 0.32, 0.27)}
+	{"id": "debug.knight", "name": "DEBUG Knight", "grid": Vector2i(-2, 4), "color": Color(0.28, 0.42, 0.58)},
+	{"id": "debug.runescribe", "name": "DEBUG Runescribe", "grid": Vector2i(-1, 4), "color": Color(0.46, 0.31, 0.59)},
+	{"id": "debug.slayer_scout", "name": "DEBUG Slayer-Scout", "grid": Vector2i(0, 4), "color": Color(0.32, 0.49, 0.35)},
+	{"id": "debug.fourth_slot", "name": "DEBUG Fourth Slot", "grid": Vector2i(1, 4), "color": Color(0.56, 0.32, 0.27)}
+]
+
+const PLAZA_ROUTES := [
+	{"name": "Aethelgard City", "grid": Vector2i(0, 5), "color": Color(0.73, 0.65, 0.50)},
+	{"name": "The Ringmarket", "grid": Vector2i(5, 0), "color": Color(0.79, 0.55, 0.31)},
+	{"name": "Slayers Guild HQ", "grid": Vector2i(-5, 0), "color": Color(0.45, 0.46, 0.42)},
+	{"name": "Citadel Training", "grid": Vector2i(3, -4), "color": Color(0.38, 0.48, 0.66)},
+	{"name": "Citadel Archives", "grid": Vector2i(-3, -4), "color": Color(0.56, 0.49, 0.37)},
+	{"name": "Stable Yard", "grid": Vector2i(5, 3), "color": Color(0.55, 0.36, 0.22)}
 ]
 
 var _camera: Camera2D
@@ -116,10 +125,10 @@ func _write_scene_state_to_game_state() -> void:
 		}
 
 	GameState.party_runtime_state["debug_party"] = saved_actor_states
-	GameState.evidence_state["testbed.ash_wool_sample"] = {
+	GameState.evidence_state["testbed.crossroads_caravan_ledger"] = {
 		"collected": _evidence_collected,
 		"visibility": "public",
-		"provenance": "testbed.aethelgard_courtyard"
+		"provenance": "testbed.crossroads_plaza"
 	}
 	GameState.world_state["bootstrap_graybox"] = {
 		"selected_actor_id": _selected_actor_id,
@@ -133,10 +142,15 @@ func _rebuild_world() -> void:
 		child.queue_free()
 
 	_actor_nodes.clear()
-	_add_diamond_floor(Vector2i.ZERO, FLOOR_HALF_EXTENTS, Color(0.42, 0.48, 0.43), "Aethelgard Courtyard")
-	_add_isometric_block("North Wall Placeholder", Vector2i(0, -4), Vector2i(10, 1), 2.0, Color(0.34, 0.36, 0.34))
-	_add_isometric_block("Archive Block Placeholder", Vector2i(-4, -1), Vector2i(2, 2), 1.6, Color(0.37, 0.35, 0.31))
-	_add_isometric_block("Market Stall Placeholder", Vector2i(3, 1), Vector2i(3, 2), 1.0, Color(0.50, 0.39, 0.24))
+	_add_diamond_floor(Vector2i.ZERO, FLOOR_HALF_EXTENTS, Color(0.61, 0.56, 0.48), "Crossroads Plaza Stone")
+	_add_radial_roads()
+	_add_outer_canals_and_bridges()
+	_add_citadel_axis()
+	_add_central_fountain()
+	_add_market_tents()
+	_add_civic_banners()
+	_add_route_markers()
+	_add_crowd_markers()
 	_add_evidence_marker()
 
 	_overlay_root = Node2D.new()
@@ -149,8 +163,8 @@ func _rebuild_world() -> void:
 		_add_actor_marker(str(actor.id), str(actor.name), actor.color)
 
 	var label := Label.new()
-	label.text = "2.5D working test: select, move, inspect evidence, save/load"
-	label.position = Vector2(-480.0, -330.0)
+	label.text = "Crossroads Plaza, Aethelgard: neutral gateway civic hub"
+	label.position = Vector2(-590.0, -410.0)
 	label.add_theme_font_size_override("font_size", 24)
 	_world_root.add_child(label)
 
@@ -258,7 +272,7 @@ func _handle_mouse_input() -> void:
 		if _is_grid_walkable(target_grid):
 			_set_actor_target(_selected_actor_id, target_grid)
 		else:
-			_show_dialog("That tile is outside the authored test courtyard.")
+			_show_dialog("That tile is outside the authored Crossroads Plaza test area.")
 
 
 func _update_actor_motion(delta: float) -> void:
@@ -314,7 +328,7 @@ func _collect_evidence() -> void:
 	_write_scene_state_to_game_state()
 	_refresh_hud()
 	_rebuild_world()
-	_show_dialog("Placeholder evidence: Ash on wool.\nVisibility: public testbed fact.\nThe sample suggests heat residue, but this debug scene does not identify a culprit.")
+	_show_dialog("Crossroads Plaza public note: Maelin Vossmark's caravan ledger records permits, route contracts, escort postings, and missing cargo claims.\nVisibility: public testbed fact.\nNo hiddenInfo or secret lore is exposed here.")
 
 
 func _toggle_combat_overlay() -> void:
@@ -332,7 +346,7 @@ func _refresh_hud() -> void:
 	var selected_name := str(_actor_states.get(_selected_actor_id, {}).get("display_name", _selected_actor_id))
 	var evidence_text := "collected" if _evidence_collected else "available"
 	var combat_text := "shown" if _combat_overlay_visible else "hidden"
-	_hud_label.text = "Milestone 1 Working Test\nNative target: 1920 x 1080\nSelected: %s\nEvidence: %s\nCombat overlay: %s\nLeft-click select/inspect, right-click move\nTab overlay, F5 save, F9 load, Esc title" % [selected_name, evidence_text, combat_text]
+	_hud_label.text = "Crossroads Plaza Working Test\nNative target: 1920 x 1080\nSelected: %s\nCaravan ledger: %s\nCombat overlay: %s\nLeft-click select/inspect, right-click move\nTab overlay, F5 save, F9 load, Esc title" % [selected_name, evidence_text, combat_text]
 
 
 func _show_dialog(text: String) -> void:
@@ -346,6 +360,9 @@ func _show_dialog(text: String) -> void:
 func _add_diamond_floor(origin: Vector2i, half_extents: Vector2i, color: Color, node_name: String) -> void:
 	for x in range(origin.x - half_extents.x, origin.x + half_extents.x + 1):
 		for y in range(origin.y - half_extents.y, origin.y + half_extents.y + 1):
+			if _is_outer_corner(Vector2i(x, y)):
+				continue
+
 			var tile_position := _iso(Vector2i(x, y))
 			var tile := Polygon2D.new()
 			tile.name = "%s %d,%d" % [node_name, x, y]
@@ -355,13 +372,135 @@ func _add_diamond_floor(origin: Vector2i, half_extents: Vector2i, color: Color, 
 			_world_root.add_child(tile)
 
 
+func _add_radial_roads() -> void:
+	for x in range(-FLOOR_HALF_EXTENTS.x, FLOOR_HALF_EXTENTS.x + 1):
+		for y in range(-FLOOR_HALF_EXTENTS.y, FLOOR_HALF_EXTENTS.y + 1):
+			var grid_position := Vector2i(x, y)
+			if not _is_grid_walkable(grid_position):
+				continue
+
+			var on_crossroad := abs(x) <= 1 or abs(y) <= 1 or abs(x - y) <= 1 or abs(x + y) <= 1
+			if on_crossroad:
+				var tile := Polygon2D.new()
+				var center := _iso(grid_position)
+				tile.name = "Pale Radial Road %d,%d" % [x, y]
+				tile.polygon = _diamond(center)
+				tile.color = Color(0.74, 0.70, 0.62, 0.92)
+				tile.z_index = int(center.y) + 1
+				_world_root.add_child(tile)
+
+
+func _add_outer_canals_and_bridges() -> void:
+	for grid_position in [
+		Vector2i(-7, -1), Vector2i(-7, 0), Vector2i(-7, 1),
+		Vector2i(7, -1), Vector2i(7, 0), Vector2i(7, 1),
+		Vector2i(-1, -5), Vector2i(0, -5), Vector2i(1, -5),
+		Vector2i(-1, 5), Vector2i(0, 5), Vector2i(1, 5)
+	]:
+		var center := _iso(grid_position)
+		var water := Polygon2D.new()
+		water.name = "Outer Canal %s" % str(grid_position)
+		water.polygon = _diamond(center)
+		water.color = Color(0.16, 0.43, 0.56, 0.88)
+		water.z_index = int(center.y)
+		_world_root.add_child(water)
+
+	for grid_position in [Vector2i(0, -5), Vector2i(0, 5), Vector2i(-7, 0), Vector2i(7, 0)]:
+		_add_isometric_block("Stone Bridge %s" % str(grid_position), grid_position, Vector2i(1, 1), 0.18, Color(0.69, 0.64, 0.54))
+
+
+func _add_citadel_axis() -> void:
+	_add_isometric_block("Distant Magi-Knight Citadel Base", Vector2i(0, -6), Vector2i(3, 2), 2.8, Color(0.70, 0.66, 0.56))
+	_add_isometric_block("Distant Magi-Knight Citadel Spire", Vector2i(1, -7), Vector2i(1, 1), 5.2, Color(0.78, 0.75, 0.66))
+
+	var banner := Label.new()
+	banner.text = "Magi-Knight Citadel"
+	banner.position = _iso(Vector2i(2, -7)) + Vector2(24.0, -188.0)
+	banner.add_theme_font_size_override("font_size", 14)
+	banner.z_index = int(banner.position.y) + 50
+	_world_root.add_child(banner)
+
+
+func _add_central_fountain() -> void:
+	var center := _iso(Vector2i.ZERO)
+	var basin := Polygon2D.new()
+	basin.name = "Crossroads Fountain Basin"
+	basin.polygon = PackedVector2Array([
+		center + Vector2(0.0, -72.0),
+		center + Vector2(112.0, -24.0),
+		center + Vector2(130.0, 0.0),
+		center + Vector2(112.0, 24.0),
+		center + Vector2(0.0, 72.0),
+		center + Vector2(-112.0, 24.0),
+		center + Vector2(-130.0, 0.0),
+		center + Vector2(-112.0, -24.0)
+	])
+	basin.color = Color(0.53, 0.67, 0.70)
+	basin.z_index = int(center.y) + 20
+	_world_root.add_child(basin)
+
+	_add_isometric_block("Fountain Stone Tier", Vector2i.ZERO, Vector2i(1, 1), 0.35, Color(0.76, 0.72, 0.63))
+	_add_isometric_block("Fountain Water Jet Placeholder", Vector2i(0, 0), Vector2i(1, 1), 0.95, Color(0.34, 0.70, 0.86))
+
+
+func _add_market_tents() -> void:
+	for tent in [
+		{"name": "Ringmarket Blue Awning", "grid": Vector2i(4, -1), "color": Color(0.18, 0.29, 0.58)},
+		{"name": "Ringmarket Amber Awning", "grid": Vector2i(5, 1), "color": Color(0.72, 0.43, 0.18)},
+		{"name": "Caravan Permit Desk", "grid": EVIDENCE_GRID, "color": Color(0.40, 0.25, 0.13)},
+		{"name": "Stable Tack Awning", "grid": Vector2i(4, 3), "color": Color(0.25, 0.45, 0.36)},
+		{"name": "Slayer Notice Awning", "grid": Vector2i(-4, 1), "color": Color(0.35, 0.36, 0.34)}
+	]:
+		var grid_position: Vector2i = tent.grid
+		_add_isometric_block(str(tent.name), grid_position, Vector2i(1, 1), 0.85, tent.color)
+
+
+func _add_civic_banners() -> void:
+	for grid_position in [Vector2i(-2, -2), Vector2i(2, -2), Vector2i(-2, 2), Vector2i(2, 2)]:
+		_add_isometric_block("Blue Gold Civic Banner %s" % str(grid_position), grid_position, Vector2i(1, 1), 1.4, Color(0.12, 0.22, 0.50))
+
+
+func _add_route_markers() -> void:
+	for route in PLAZA_ROUTES:
+		var grid_position: Vector2i = route.grid
+		var color: Color = route.color
+		_add_isometric_block("%s Route Marker" % str(route.name), grid_position, Vector2i(1, 1), 0.55, color)
+
+		var label := Label.new()
+		label.text = str(route.name)
+		label.position = _iso(grid_position) + Vector2(-46.0, -54.0)
+		label.add_theme_font_size_override("font_size", 13)
+		label.z_index = int(label.position.y) + 30
+		_world_root.add_child(label)
+
+
+func _add_crowd_markers() -> void:
+	for grid_position in [
+		Vector2i(-1, 0), Vector2i(1, 0), Vector2i(-3, 0), Vector2i(3, 0),
+		Vector2i(0, -2), Vector2i(0, 2), Vector2i(-2, 1), Vector2i(2, -1),
+		Vector2i(-5, 2), Vector2i(5, -2)
+	]:
+		var base := _iso(grid_position) + Vector2(0.0, -12.0)
+		var crowd := Polygon2D.new()
+		crowd.name = "Crowd Placeholder %s" % str(grid_position)
+		crowd.polygon = PackedVector2Array([
+			base + Vector2(-6.0, 3.0),
+			base + Vector2(0.0, -18.0),
+			base + Vector2(6.0, 3.0),
+			base + Vector2(0.0, 8.0)
+		])
+		crowd.color = Color(0.20 + abs(grid_position.x) * 0.025, 0.17, 0.13 + abs(grid_position.y) * 0.03, 0.95)
+		crowd.z_index = int(base.y) + 8
+		_world_root.add_child(crowd)
+
+
 func _add_evidence_marker() -> void:
 	var marker_color := Color(0.52, 0.52, 0.52) if _evidence_collected else Color(0.82, 0.68, 0.30)
 	_add_isometric_block("Evidence Marker", EVIDENCE_GRID, Vector2i(1, 1), 0.45, marker_color)
 
 	var tag := Label.new()
-	tag.text = "evidence: collected" if _evidence_collected else "evidence: inspect"
-	tag.position = _iso(EVIDENCE_GRID) + Vector2(26.0, -42.0)
+	tag.text = "Maelin's ledger: read" if _evidence_collected else "Maelin's ledger"
+	tag.position = _iso(EVIDENCE_GRID) + Vector2(26.0, -58.0)
 	tag.add_theme_font_size_override("font_size", 13)
 	tag.z_index = int(tag.position.y) + 20
 	_world_root.add_child(tag)
@@ -512,7 +651,11 @@ func _diamond(center: Vector2) -> PackedVector2Array:
 
 
 func _is_grid_walkable(grid_position: Vector2i) -> bool:
-	return abs(grid_position.x) <= FLOOR_HALF_EXTENTS.x and abs(grid_position.y) <= FLOOR_HALF_EXTENTS.y
+	return abs(grid_position.x) <= FLOOR_HALF_EXTENTS.x and abs(grid_position.y) <= FLOOR_HALF_EXTENTS.y and not _is_outer_corner(grid_position)
+
+
+func _is_outer_corner(grid_position: Vector2i) -> bool:
+	return abs(grid_position.x) >= FLOOR_HALF_EXTENTS.x - 1 and abs(grid_position.y) >= FLOOR_HALF_EXTENTS.y - 1
 
 
 func _snap_actor_world_positions_to_grid() -> void:

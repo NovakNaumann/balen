@@ -2,11 +2,16 @@
 
 This project uses WAKFU and DOFUS as high-level references for presentation and encounter flow, not as assets, UI copies, story references, or exact mechanical clones.
 
+Primary Aethelgard concept reference for the current pass:
+
+- `docs/reference/aethelgard_concept_crossroads_plaza.png`
+
 ## Visual Direction
 
 - Use a fixed isometric 2.5D view built from 2D art layers that imply volume.
 - Environments should appear dimensional through painted planes, tile diamonds, object bases, fake height, shadows, parallax, and depth sorting.
 - Characters are 2D sprites/portraits/animation sets placed into the same isometric space.
+- For Aethelgard, prioritize pale civic stone, blue-gold banners, radial roads, canals/bridges, market edges, crowd flow, and a distant Magi-Knight Citadel axis.
 - Avoid true 3D cameras, 3D mesh-first environments, free perspective orbit, or physically modeled 3D battle arenas unless a future exception is explicitly approved.
 - Target a native 1920 x 1080 composition first. UI and scene framing must fit that screen cleanly.
 
@@ -30,4 +35,3 @@ This project uses WAKFU and DOFUS as high-level references for presentation and 
 - Prefer `Node2D`, `CanvasItem` layers, `TileMapLayer` or authored tile/object layers, sprite sheets, polygon placeholders, and deterministic depth ordering.
 - Keep combat math and combat state separate from presentation. The scene should display tactical state; it should not own the resolver rules.
 - For Milestone 0, graybox geometry may use polygons and labels. Later milestones should replace these with approved painterly isometric assets.
-

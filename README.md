@@ -46,12 +46,12 @@ cd .\balen
 ..\godot.windows.opt.tools.64.exe --headless --path . --script res://scripts/tools/content_validator.gd
 ```
 
-The current working test is intentionally small: boot to title screen, load a 1920x1080 2.5D Aethelgard graybox, select and move DEBUG party markers, inspect one evidence marker, toggle the same-scene combat overlay, and quick save/load scene state.
+The current working test is intentionally small: boot to title screen, load a 1920x1080 2.5D Crossroads Plaza scene in Aethelgard, select and move DEBUG party markers, inspect Maelin Vossmark's public caravan ledger, toggle the same-scene combat overlay, and quick save/load scene state.
 
 Working test controls:
 
 - Left click: select a DEBUG party member or inspect evidence.
-- Right click: move the selected party member to a reachable courtyard tile.
+- Right click: move the selected party member to a reachable plaza tile.
 - `Tab`: show or hide the same-environment combat overlay.
 - Mouse wheel: zoom.
 - `Q` / `E`: rotate the isometric view by 90 degrees.

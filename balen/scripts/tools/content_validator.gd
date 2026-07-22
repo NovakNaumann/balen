@@ -49,14 +49,20 @@ func _validate_manifest(errors: Array[String], warnings: Array[String]) -> void:
 		errors.append("Source manifest must be a JSON object.")
 		return
 
-	if parsed.get("source_filename", "") != "balen 35_ (1).json":
-		errors.append("Source manifest must name the latest Voyage JSON snapshot.")
+	if parsed.get("source_filename", "") != "balen_35_low_hp_d20_known_patch.json":
+		errors.append("Source manifest must name the latest copied Voyage JSON snapshot.")
 
 	if parsed.get("heroes_version", "") != "Voyage.IO Heroes V35":
 		errors.append("Source manifest must record Voyage.IO Heroes V35.")
 
 	if not bool(parsed.get("source_present", false)):
 		warnings.append("Original Voyage JSON is not present yet; importer work remains blocked until it is added read-only.")
+	else:
+		var source_path := "res://source_data/voyage/%s" % str(parsed.get("source_filename", ""))
+		if not FileAccess.file_exists(source_path):
+			errors.append("Manifest says source is present, but file is missing: %s" % source_path)
+		elif FileAccess.get_file_as_bytes(source_path).size() != int(parsed.get("source_byte_size", -1)):
+			errors.append("Copied source JSON byte size does not match source manifest.")
 
 
 func _validate_docs(errors: Array[String], _warnings: Array[String]) -> void:

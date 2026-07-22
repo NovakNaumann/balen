@@ -12,7 +12,9 @@ func _initialize() -> void:
 	_expect_file("res://scripts/autoload/SaveService.gd", failures)
 	_expect_file("res://scripts/autoload/DebugService.gd", failures)
 	_expect_file("res://source_data/voyage/source_manifest.json", failures)
+	_expect_file("res://source_data/voyage/balen_35_low_hp_d20_known_patch.json", failures)
 	_expect_external_file(ProjectSettings.globalize_path("res://../docs/2_5d_style_reference.md"), failures)
+	_expect_external_file(ProjectSettings.globalize_path("res://../docs/reference/aethelgard_concept_crossroads_plaza.png"), failures)
 
 	var registry_script: Variant = load("res://scripts/autoload/DataRegistry.gd")
 	if registry_script == null:
@@ -23,6 +25,10 @@ func _initialize() -> void:
 		var manifest := registry.load_source_manifest()
 		if manifest.get("heroes_version", "") != "Voyage.IO Heroes V35":
 			failures.append("Source manifest does not record Voyage.IO Heroes V35.")
+		if manifest.get("source_filename", "") != "balen_35_low_hp_d20_known_patch.json":
+			failures.append("Source manifest does not reference the latest copied Voyage JSON.")
+		if manifest.get("source_hash_sha256", "") != "E7C75DFA082DE61FD0AFD1CBE242179764BE5533EEF27B10E29E55E17344606B":
+			failures.append("Source manifest hash does not match the copied Voyage JSON.")
 		registry.queue_free()
 
 	var game_state_script: Variant = load("res://scripts/autoload/GameState.gd")

@@ -51,7 +51,7 @@ func _build_ui() -> void:
 	stack.add_child(scope)
 
 	var start_button := Button.new()
-	start_button.text = "Start Graybox"
+	start_button.text = "Enter Crossroads Plaza"
 	start_button.pressed.connect(func() -> void: EventBus.request_scene(TESTBED_SCENE))
 	stack.add_child(start_button)
 
@@ -71,4 +71,3 @@ func _build_ui() -> void:
 func _on_scene_requested(scene_path: String) -> void:
 	GameState.current_scene_path = scene_path
 	get_tree().change_scene_to_file(scene_path)
-
