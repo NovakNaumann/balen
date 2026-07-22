@@ -17,9 +17,9 @@ The testbed plan defines the milestone order and systems scope. The canon bible 
 
 ## Current Focus
 
-Current implementation target: Milestone 0, repository and rules foundation.
+Current implementation target: Milestone 1 working exploration test.
 
-Do not begin later milestones until the current milestone's exit tests pass.
+Do not begin later systems until the current working test remains launchable and the headless checks pass.
 
 ## Godot Project
 
@@ -46,4 +46,14 @@ cd .\balen
 ..\godot.windows.opt.tools.64.exe --headless --path . --script res://scripts/tools/content_validator.gd
 ```
 
-Milestone 0 is intentionally small: boot to title screen, load a 1920x1080 2.5D graybox scene, verify service skeletons, and keep source/canon rules visible.
+The current working test is intentionally small: boot to title screen, load a 1920x1080 2.5D Aethelgard graybox, select and move DEBUG party markers, inspect one evidence marker, toggle the same-scene combat overlay, and quick save/load scene state.
+
+Working test controls:
+
+- Left click: select a DEBUG party member or inspect evidence.
+- Right click: move the selected party member to a reachable courtyard tile.
+- `Tab`: show or hide the same-environment combat overlay.
+- Mouse wheel: zoom.
+- `Q` / `E`: rotate the isometric view by 90 degrees.
+- `F5` / `F9`: debug quick save/load.
+- `Esc`: return to title.

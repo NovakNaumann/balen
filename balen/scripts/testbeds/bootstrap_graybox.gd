@@ -3,22 +3,47 @@ extends Node2D
 const TITLE_SCENE := "res://scenes/ui/title_screen.tscn"
 const DESIGN_RESOLUTION := Vector2(1920.0, 1080.0)
 const TILE_SIZE := Vector2(112.0, 56.0)
+const MOVE_SPEED_PIXELS := 340.0
+const FLOOR_HALF_EXTENTS := Vector2i(4, 3)
+const EVIDENCE_GRID := Vector2i(1, -1)
+
+const ACTOR_DEFINITIONS := [
+	{"id": "debug.knight", "name": "DEBUG Knight", "grid": Vector2i(-2, 3), "color": Color(0.28, 0.42, 0.58)},
+	{"id": "debug.runescribe", "name": "DEBUG Runescribe", "grid": Vector2i(-1, 3), "color": Color(0.46, 0.31, 0.59)},
+	{"id": "debug.slayer_scout", "name": "DEBUG Slayer-Scout", "grid": Vector2i(0, 3), "color": Color(0.32, 0.49, 0.35)},
+	{"id": "debug.fourth_slot", "name": "DEBUG Fourth Slot", "grid": Vector2i(1, 3), "color": Color(0.56, 0.32, 0.27)}
+]
 
 var _camera: Camera2D
 var _world_root: Node2D
+var _overlay_root: Node2D
+var _hud_label: Label
+var _dialog_panel: PanelContainer
+var _dialog_label: Label
+
 var _view_rotation_steps := 0
 var _zoom := 1.0
+var _combat_overlay_visible := true
+var _selected_actor_id := "debug.knight"
+var _evidence_collected := false
+var _actor_states: Dictionary = {}
+var _actor_nodes: Dictionary = {}
 
 
 func _ready() -> void:
 	GameState.current_scene_path = "res://scenes/testbeds/bootstrap_graybox.tscn"
+	_initialize_actor_states()
+	_restore_scene_state_from_game_state()
 	_build_scene()
 	_rebuild_world()
 	_build_overlay()
+	_refresh_hud()
 
 
-func _process(_delta: float) -> void:
-	_handle_camera_input()
+func _process(delta: float) -> void:
+	_handle_keyboard_input()
+	_handle_mouse_input()
+	_update_actor_motion(delta)
 
 
 func _build_scene() -> void:
@@ -38,30 +63,98 @@ func _build_scene() -> void:
 	_camera.name = "Native1080Camera2D"
 	_camera.enabled = true
 	_camera.position = Vector2.ZERO
+	_camera.zoom = Vector2(_zoom, _zoom)
 	add_child(_camera)
+
+
+func _initialize_actor_states() -> void:
+	for actor in ACTOR_DEFINITIONS:
+		var actor_id := str(actor.id)
+		if _actor_states.has(actor_id):
+			continue
+
+		var grid_position: Vector2i = actor.grid
+		_actor_states[actor_id] = {
+			"id": actor_id,
+			"display_name": str(actor.name),
+			"grid": grid_position,
+			"target_grid": grid_position,
+			"world_position": _iso(grid_position)
+		}
+
+
+func _restore_scene_state_from_game_state() -> void:
+	var scene_state: Dictionary = GameState.world_state.get("bootstrap_graybox", {})
+	if scene_state.is_empty():
+		_write_scene_state_to_game_state()
+		return
+
+	_selected_actor_id = str(scene_state.get("selected_actor_id", _selected_actor_id))
+	_combat_overlay_visible = bool(scene_state.get("combat_overlay_visible", _combat_overlay_visible))
+	_evidence_collected = bool(scene_state.get("evidence_collected", _evidence_collected))
+
+	var saved_actor_states: Dictionary = GameState.party_runtime_state.get("debug_party", {})
+	for actor_id in saved_actor_states.keys():
+		if not _actor_states.has(actor_id):
+			continue
+
+		var saved_state: Dictionary = saved_actor_states[actor_id]
+		var grid_position := _vector2i_from_array(saved_state.get("grid", []), _actor_states[actor_id].grid)
+		_actor_states[actor_id].grid = grid_position
+		_actor_states[actor_id].target_grid = grid_position
+		_actor_states[actor_id].world_position = _iso(grid_position)
+
+
+func _write_scene_state_to_game_state() -> void:
+	var saved_actor_states := {}
+	for actor_id in _actor_states.keys():
+		var actor_state: Dictionary = _actor_states[actor_id]
+		var grid_position: Vector2i = actor_state.grid
+		saved_actor_states[actor_id] = {
+			"grid": [grid_position.x, grid_position.y],
+			"selected": actor_id == _selected_actor_id
+		}
+
+	GameState.party_runtime_state["debug_party"] = saved_actor_states
+	GameState.evidence_state["testbed.ash_wool_sample"] = {
+		"collected": _evidence_collected,
+		"visibility": "public",
+		"provenance": "testbed.aethelgard_courtyard"
+	}
+	GameState.world_state["bootstrap_graybox"] = {
+		"selected_actor_id": _selected_actor_id,
+		"combat_overlay_visible": _combat_overlay_visible,
+		"evidence_collected": _evidence_collected
+	}
 
 
 func _rebuild_world() -> void:
 	for child in _world_root.get_children():
 		child.queue_free()
 
-	_add_diamond_floor(Vector2i(0, 0), Vector2i(9, 7), Color(0.42, 0.48, 0.43), "Aethelgard Courtyard")
+	_actor_nodes.clear()
+	_add_diamond_floor(Vector2i.ZERO, FLOOR_HALF_EXTENTS, Color(0.42, 0.48, 0.43), "Aethelgard Courtyard")
 	_add_isometric_block("North Wall Placeholder", Vector2i(0, -4), Vector2i(10, 1), 2.0, Color(0.34, 0.36, 0.34))
 	_add_isometric_block("Archive Block Placeholder", Vector2i(-4, -1), Vector2i(2, 2), 1.6, Color(0.37, 0.35, 0.31))
 	_add_isometric_block("Market Stall Placeholder", Vector2i(3, 1), Vector2i(3, 2), 1.0, Color(0.50, 0.39, 0.24))
-	_add_isometric_block("Evidence Marker", Vector2i(1, -1), Vector2i(1, 1), 0.45, Color(0.82, 0.68, 0.30))
+	_add_evidence_marker()
+
+	_overlay_root = Node2D.new()
+	_overlay_root.name = "SameSceneCombatOverlay"
+	_overlay_root.visible = _combat_overlay_visible
+	_world_root.add_child(_overlay_root)
 	_add_same_environment_combat_overlay(Vector2i(0, 1), Vector2i(7, 5))
 
-	_add_actor_marker("DEBUG Knight", Vector2i(-2, 3), Color(0.28, 0.42, 0.58))
-	_add_actor_marker("DEBUG Runescribe", Vector2i(-1, 3), Color(0.46, 0.31, 0.59))
-	_add_actor_marker("DEBUG Slayer-Scout", Vector2i(0, 3), Color(0.32, 0.49, 0.35))
-	_add_actor_marker("DEBUG Fourth Slot", Vector2i(1, 3), Color(0.56, 0.32, 0.27))
+	for actor in ACTOR_DEFINITIONS:
+		_add_actor_marker(str(actor.id), str(actor.name), actor.color)
 
 	var label := Label.new()
-	label.text = "2.5D isometric graybox: exploration and combat share this environment"
-	label.position = Vector2(-430.0, -330.0)
+	label.text = "2.5D working test: select, move, inspect evidence, save/load"
+	label.position = Vector2(-480.0, -330.0)
 	label.add_theme_font_size_override("font_size", 24)
 	_world_root.add_child(label)
+
+	_refresh_actor_visuals()
 
 
 func _build_overlay() -> void:
@@ -72,8 +165,8 @@ func _build_overlay() -> void:
 	var panel := PanelContainer.new()
 	panel.anchor_left = 0.02
 	panel.anchor_top = 0.02
-	panel.anchor_right = 0.30
-	panel.anchor_bottom = 0.17
+	panel.anchor_right = 0.34
+	panel.anchor_bottom = 0.22
 	layer.add_child(panel)
 
 	var margin := MarginContainer.new()
@@ -83,20 +176,41 @@ func _build_overlay() -> void:
 	margin.add_theme_constant_override("margin_bottom", 14)
 	panel.add_child(margin)
 
-	var label := Label.new()
-	label.text = "Milestone 0 2.5D Graybox\nNative target: 1920 x 1080\nCombat overlay stays in-world\nQ/E rotate view, wheel zoom, Esc title"
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.add_theme_font_size_override("font_size", 18)
-	margin.add_child(label)
+	_hud_label = Label.new()
+	_hud_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_hud_label.add_theme_font_size_override("font_size", 18)
+	margin.add_child(_hud_label)
+
+	_dialog_panel = PanelContainer.new()
+	_dialog_panel.anchor_left = 0.30
+	_dialog_panel.anchor_top = 0.68
+	_dialog_panel.anchor_right = 0.70
+	_dialog_panel.anchor_bottom = 0.94
+	_dialog_panel.visible = false
+	layer.add_child(_dialog_panel)
+
+	var dialog_margin := MarginContainer.new()
+	dialog_margin.add_theme_constant_override("margin_left", 20)
+	dialog_margin.add_theme_constant_override("margin_top", 18)
+	dialog_margin.add_theme_constant_override("margin_right", 20)
+	dialog_margin.add_theme_constant_override("margin_bottom", 18)
+	_dialog_panel.add_child(dialog_margin)
+
+	_dialog_label = Label.new()
+	_dialog_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_dialog_label.add_theme_font_size_override("font_size", 20)
+	dialog_margin.add_child(_dialog_label)
 
 
-func _handle_camera_input() -> void:
+func _handle_keyboard_input() -> void:
 	if Input.is_action_just_pressed("camera_rotate_left"):
 		_view_rotation_steps = wrapi(_view_rotation_steps - 1, 0, 4)
+		_snap_actor_world_positions_to_grid()
 		_rebuild_world()
 
 	if Input.is_action_just_pressed("camera_rotate_right"):
 		_view_rotation_steps = wrapi(_view_rotation_steps + 1, 0, 4)
+		_snap_actor_world_positions_to_grid()
 		_rebuild_world()
 
 	if Input.is_action_just_pressed("zoom_in"):
@@ -107,26 +221,150 @@ func _handle_camera_input() -> void:
 		_zoom = maxf(0.75, _zoom - 0.1)
 		_camera.zoom = Vector2(_zoom, _zoom)
 
+	if Input.is_action_just_pressed("toggle_combat_overlay"):
+		_toggle_combat_overlay()
+
+	if Input.is_action_just_pressed("quick_save"):
+		_write_scene_state_to_game_state()
+		SaveService.save_game()
+		_show_dialog("Debug quick save written.\nActor positions, selected party member, evidence, and overlay state were stored.")
+
+	if Input.is_action_just_pressed("quick_load"):
+		if SaveService.load_game():
+			_restore_scene_state_from_game_state()
+			_snap_actor_world_positions_to_grid()
+			_rebuild_world()
+			_refresh_hud()
+			_show_dialog("Debug quick save loaded.\nThe working test restored scene state from SaveService.")
+		else:
+			_show_dialog("No debug quick save found yet. Press F5 after moving or inspecting evidence.")
+
 	if Input.is_action_just_pressed("pause"):
+		_write_scene_state_to_game_state()
 		GameState.current_scene_path = TITLE_SCENE
 		get_tree().change_scene_to_file(TITLE_SCENE)
 
 
-func _add_diamond_floor(origin: Vector2i, size: Vector2i, color: Color, node_name: String) -> void:
-	for x in range(origin.x - size.x / 2, origin.x + size.x / 2 + 1):
-		for y in range(origin.y - size.y / 2, origin.y + size.y / 2 + 1):
+func _handle_mouse_input() -> void:
+	if Input.is_action_just_pressed("select"):
+		var mouse_world := get_global_mouse_position()
+		if _try_select_actor(mouse_world):
+			return
+		if mouse_world.distance_to(_iso(EVIDENCE_GRID)) <= 46.0:
+			_collect_evidence()
+
+	if Input.is_action_just_pressed("move_command"):
+		var target_grid := _grid_from_world(get_global_mouse_position())
+		if _is_grid_walkable(target_grid):
+			_set_actor_target(_selected_actor_id, target_grid)
+		else:
+			_show_dialog("That tile is outside the authored test courtyard.")
+
+
+func _update_actor_motion(delta: float) -> void:
+	var any_moved := false
+	for actor_id in _actor_states.keys():
+		var actor_state: Dictionary = _actor_states[actor_id]
+		var target_position := _iso(actor_state.target_grid)
+		var world_position: Vector2 = actor_state.world_position
+		if world_position.distance_to(target_position) <= 1.0:
+			actor_state.world_position = target_position
+			actor_state.grid = actor_state.target_grid
+			continue
+
+		actor_state.world_position = world_position.move_toward(target_position, MOVE_SPEED_PIXELS * delta)
+		any_moved = true
+
+	if any_moved:
+		_refresh_actor_visuals()
+		_write_scene_state_to_game_state()
+
+
+func _try_select_actor(mouse_world: Vector2) -> bool:
+	var closest_actor_id := ""
+	var closest_distance := 99999.0
+	for actor_id in _actor_states.keys():
+		var actor_position: Vector2 = _actor_states[actor_id].world_position
+		var distance := mouse_world.distance_to(actor_position + Vector2(0.0, -35.0))
+		if distance < closest_distance:
+			closest_actor_id = actor_id
+			closest_distance = distance
+
+	if closest_actor_id != "" and closest_distance <= 52.0:
+		_selected_actor_id = closest_actor_id
+		_refresh_actor_visuals()
+		_write_scene_state_to_game_state()
+		_refresh_hud()
+		return true
+
+	return false
+
+
+func _set_actor_target(actor_id: String, target_grid: Vector2i) -> void:
+	if not _actor_states.has(actor_id):
+		return
+
+	_actor_states[actor_id].target_grid = target_grid
+	_show_dialog("%s moving to tile %s." % [_actor_states[actor_id].display_name, str(target_grid)])
+	_write_scene_state_to_game_state()
+
+
+func _collect_evidence() -> void:
+	_evidence_collected = true
+	_write_scene_state_to_game_state()
+	_refresh_hud()
+	_rebuild_world()
+	_show_dialog("Placeholder evidence: Ash on wool.\nVisibility: public testbed fact.\nThe sample suggests heat residue, but this debug scene does not identify a culprit.")
+
+
+func _toggle_combat_overlay() -> void:
+	_combat_overlay_visible = not _combat_overlay_visible
+	if _overlay_root != null:
+		_overlay_root.visible = _combat_overlay_visible
+	_write_scene_state_to_game_state()
+	_refresh_hud()
+
+
+func _refresh_hud() -> void:
+	if _hud_label == null:
+		return
+
+	var selected_name := str(_actor_states.get(_selected_actor_id, {}).get("display_name", _selected_actor_id))
+	var evidence_text := "collected" if _evidence_collected else "available"
+	var combat_text := "shown" if _combat_overlay_visible else "hidden"
+	_hud_label.text = "Milestone 1 Working Test\nNative target: 1920 x 1080\nSelected: %s\nEvidence: %s\nCombat overlay: %s\nLeft-click select/inspect, right-click move\nTab overlay, F5 save, F9 load, Esc title" % [selected_name, evidence_text, combat_text]
+
+
+func _show_dialog(text: String) -> void:
+	if _dialog_panel == null or _dialog_label == null:
+		return
+
+	_dialog_label.text = text
+	_dialog_panel.visible = true
+
+
+func _add_diamond_floor(origin: Vector2i, half_extents: Vector2i, color: Color, node_name: String) -> void:
+	for x in range(origin.x - half_extents.x, origin.x + half_extents.x + 1):
+		for y in range(origin.y - half_extents.y, origin.y + half_extents.y + 1):
 			var tile_position := _iso(Vector2i(x, y))
 			var tile := Polygon2D.new()
 			tile.name = "%s %d,%d" % [node_name, x, y]
-			tile.polygon = PackedVector2Array([
-				tile_position + Vector2(0.0, -TILE_SIZE.y * 0.5),
-				tile_position + Vector2(TILE_SIZE.x * 0.5, 0.0),
-				tile_position + Vector2(0.0, TILE_SIZE.y * 0.5),
-				tile_position + Vector2(-TILE_SIZE.x * 0.5, 0.0)
-			])
+			tile.polygon = _diamond(tile_position)
 			tile.color = color.lightened(0.08 if (x + y) % 2 == 0 else 0.0)
 			tile.z_index = int(tile_position.y)
 			_world_root.add_child(tile)
+
+
+func _add_evidence_marker() -> void:
+	var marker_color := Color(0.52, 0.52, 0.52) if _evidence_collected else Color(0.82, 0.68, 0.30)
+	_add_isometric_block("Evidence Marker", EVIDENCE_GRID, Vector2i(1, 1), 0.45, marker_color)
+
+	var tag := Label.new()
+	tag.text = "evidence: collected" if _evidence_collected else "evidence: inspect"
+	tag.position = _iso(EVIDENCE_GRID) + Vector2(26.0, -42.0)
+	tag.add_theme_font_size_override("font_size", 13)
+	tag.z_index = int(tag.position.y) + 20
+	_world_root.add_child(tag)
 
 
 func _add_isometric_block(node_name: String, origin: Vector2i, footprint: Vector2i, height_tiles: float, color: Color) -> void:
@@ -146,58 +384,102 @@ func _add_isometric_block(node_name: String, origin: Vector2i, footprint: Vector
 	_add_polygon("%s TopFace" % node_name, top, color.lightened(0.08), int(corners[2].y) + 2)
 
 
-func _add_actor_marker(node_name: String, grid_position: Vector2i, color: Color) -> void:
-	var base := _iso(grid_position)
+func _add_actor_marker(actor_id: String, display_name: String, color: Color) -> void:
 	var shadow := Polygon2D.new()
-	shadow.name = "%s Shadow" % node_name
-	shadow.polygon = PackedVector2Array([
-		base + Vector2(0.0, -13.0),
-		base + Vector2(30.0, 0.0),
-		base + Vector2(0.0, 13.0),
-		base + Vector2(-30.0, 0.0)
-	])
+	shadow.name = "%s Shadow" % display_name
 	shadow.color = Color(0.0, 0.0, 0.0, 0.24)
-	shadow.z_index = int(base.y) + 3
 	_world_root.add_child(shadow)
 
 	var body := Polygon2D.new()
-	body.name = node_name
-	body.polygon = PackedVector2Array([
-		base + Vector2(-22.0, 4.0),
-		base + Vector2(-16.0, -60.0),
-		base + Vector2(0.0, -90.0),
-		base + Vector2(16.0, -60.0),
-		base + Vector2(22.0, 4.0),
-		base + Vector2(0.0, 18.0)
-	])
+	body.name = display_name
 	body.color = color
-	body.z_index = int(base.y) + 4
 	_world_root.add_child(body)
 
+	var selection := Line2D.new()
+	selection.name = "%s Selection" % display_name
+	selection.width = 3.0
+	selection.closed = true
+	selection.default_color = Color(1.0, 0.88, 0.35, 0.95)
+	_world_root.add_child(selection)
+
 	var label := Label.new()
-	label.text = node_name
-	label.position = base + Vector2(-58.0, 20.0)
+	label.text = display_name
 	label.add_theme_font_size_override("font_size", 13)
-	label.z_index = int(base.y) + 5
 	_world_root.add_child(label)
+
+	_actor_nodes[actor_id] = {
+		"shadow": shadow,
+		"body": body,
+		"selection": selection,
+		"label": label
+	}
+
+
+func _refresh_actor_visuals() -> void:
+	for actor_id in _actor_states.keys():
+		if not _actor_nodes.has(actor_id):
+			continue
+
+		var actor_state: Dictionary = _actor_states[actor_id]
+		var base: Vector2 = actor_state.world_position
+		var z := int(base.y) + 4
+		var nodes: Dictionary = _actor_nodes[actor_id]
+
+		var shadow: Polygon2D = nodes.shadow
+		shadow.polygon = PackedVector2Array([
+			base + Vector2(0.0, -13.0),
+			base + Vector2(30.0, 0.0),
+			base + Vector2(0.0, 13.0),
+			base + Vector2(-30.0, 0.0)
+		])
+		shadow.z_index = z
+
+		var body: Polygon2D = nodes.body
+		body.polygon = PackedVector2Array([
+			base + Vector2(-22.0, 4.0),
+			base + Vector2(-16.0, -60.0),
+			base + Vector2(0.0, -90.0),
+			base + Vector2(16.0, -60.0),
+			base + Vector2(22.0, 4.0),
+			base + Vector2(0.0, 18.0)
+		])
+		body.z_index = z + 1
+
+		var selection: Line2D = nodes.selection
+		selection.points = PackedVector2Array([
+			base + Vector2(0.0, -23.0),
+			base + Vector2(42.0, 0.0),
+			base + Vector2(0.0, 23.0),
+			base + Vector2(-42.0, 0.0)
+		])
+		selection.visible = actor_id == _selected_actor_id
+		selection.z_index = z + 2
+
+		var label: Label = nodes.label
+		label.position = base + Vector2(-58.0, 20.0)
+		label.z_index = z + 3
 
 
 func _add_same_environment_combat_overlay(origin: Vector2i, size: Vector2i) -> void:
 	for x in range(origin.x - size.x / 2, origin.x + size.x / 2 + 1):
 		for y in range(origin.y - size.y / 2, origin.y + size.y / 2 + 1):
+			var grid_position := Vector2i(x, y)
+			if not _is_grid_walkable(grid_position):
+				continue
+
 			var cell_color := Color(0.20, 0.55, 0.78, 0.34)
 			if x <= origin.x - 2:
 				cell_color = Color(0.23, 0.64, 0.42, 0.42)
 			elif x >= origin.x + 2:
 				cell_color = Color(0.78, 0.34, 0.28, 0.42)
-			_add_diamond_outline("Same Scene Combat Cell %d,%d" % [x, y], _iso(Vector2i(x, y)), cell_color)
+			_add_diamond_outline("Same Scene Combat Cell %d,%d" % [x, y], _iso(grid_position), cell_color)
 
 	var tag := Label.new()
 	tag.text = "same-scene combat layer"
 	tag.position = _iso(origin + Vector2i(2, -3)) + Vector2(12.0, -10.0)
 	tag.add_theme_font_size_override("font_size", 14)
 	tag.z_index = int(tag.position.y) + 20
-	_world_root.add_child(tag)
+	_overlay_root.add_child(tag)
 
 
 func _add_diamond_outline(node_name: String, center: Vector2, color: Color) -> void:
@@ -206,14 +488,9 @@ func _add_diamond_outline(node_name: String, center: Vector2, color: Color) -> v
 	outline.width = 2.0
 	outline.closed = true
 	outline.default_color = color
-	outline.points = PackedVector2Array([
-		center + Vector2(0.0, -TILE_SIZE.y * 0.5),
-		center + Vector2(TILE_SIZE.x * 0.5, 0.0),
-		center + Vector2(0.0, TILE_SIZE.y * 0.5),
-		center + Vector2(-TILE_SIZE.x * 0.5, 0.0)
-	])
+	outline.points = _diamond(center)
 	outline.z_index = int(center.y) + 10
-	_world_root.add_child(outline)
+	_overlay_root.add_child(outline)
 
 
 func _add_polygon(node_name: String, points: PackedVector2Array, color: Color, z: int) -> void:
@@ -225,11 +502,37 @@ func _add_polygon(node_name: String, points: PackedVector2Array, color: Color, z
 	_world_root.add_child(polygon)
 
 
+func _diamond(center: Vector2) -> PackedVector2Array:
+	return PackedVector2Array([
+		center + Vector2(0.0, -TILE_SIZE.y * 0.5),
+		center + Vector2(TILE_SIZE.x * 0.5, 0.0),
+		center + Vector2(0.0, TILE_SIZE.y * 0.5),
+		center + Vector2(-TILE_SIZE.x * 0.5, 0.0)
+	])
+
+
+func _is_grid_walkable(grid_position: Vector2i) -> bool:
+	return abs(grid_position.x) <= FLOOR_HALF_EXTENTS.x and abs(grid_position.y) <= FLOOR_HALF_EXTENTS.y
+
+
+func _snap_actor_world_positions_to_grid() -> void:
+	for actor_id in _actor_states.keys():
+		var actor_state: Dictionary = _actor_states[actor_id]
+		actor_state.world_position = _iso(actor_state.grid)
+		actor_state.target_grid = actor_state.grid
+
+
 func _iso(grid_position: Vector2i) -> Vector2:
 	var rotated := _rotate_grid(grid_position)
 	var x := float(rotated.x - rotated.y) * TILE_SIZE.x * 0.5
 	var y := float(rotated.x + rotated.y) * TILE_SIZE.y * 0.5
 	return Vector2(x, y)
+
+
+func _grid_from_world(world_position: Vector2) -> Vector2i:
+	var rotated_x := (world_position.x / (TILE_SIZE.x * 0.5) + world_position.y / (TILE_SIZE.y * 0.5)) * 0.5
+	var rotated_y := (world_position.y / (TILE_SIZE.y * 0.5) - world_position.x / (TILE_SIZE.x * 0.5)) * 0.5
+	return _unrotate_grid(Vector2i(roundi(rotated_x), roundi(rotated_y)))
 
 
 func _rotate_grid(grid_position: Vector2i) -> Vector2i:
@@ -242,3 +545,26 @@ func _rotate_grid(grid_position: Vector2i) -> Vector2i:
 			return Vector2i(grid_position.y, -grid_position.x)
 		_:
 			return grid_position
+
+
+func _unrotate_grid(grid_position: Vector2i) -> Vector2i:
+	match _view_rotation_steps:
+		1:
+			return Vector2i(grid_position.y, -grid_position.x)
+		2:
+			return Vector2i(-grid_position.x, -grid_position.y)
+		3:
+			return Vector2i(-grid_position.y, grid_position.x)
+		_:
+			return grid_position
+
+
+func _vector2i_from_array(value: Variant, fallback: Vector2i) -> Vector2i:
+	if typeof(value) != TYPE_ARRAY:
+		return fallback
+
+	var values: Array = value
+	if values.size() < 2:
+		return fallback
+
+	return Vector2i(int(values[0]), int(values[1]))

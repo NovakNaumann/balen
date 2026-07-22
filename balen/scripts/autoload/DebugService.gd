@@ -41,6 +41,9 @@ func _configure_input_actions() -> void:
 	_ensure_mouse_action("zoom_out", MOUSE_BUTTON_WHEEL_DOWN)
 	_ensure_key_action("open_journal", KEY_J)
 	_ensure_key_action("open_inventory", KEY_I)
+	_ensure_key_action("toggle_combat_overlay", KEY_TAB)
+	_ensure_key_action("quick_save", KEY_F5)
+	_ensure_key_action("quick_load", KEY_F9)
 	_ensure_key_action("pause", KEY_ESCAPE)
 
 

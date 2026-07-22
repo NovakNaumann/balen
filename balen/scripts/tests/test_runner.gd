@@ -12,6 +12,7 @@ func _initialize() -> void:
 	_expect_file("res://scripts/autoload/SaveService.gd", failures)
 	_expect_file("res://scripts/autoload/DebugService.gd", failures)
 	_expect_file("res://source_data/voyage/source_manifest.json", failures)
+	_expect_external_file(ProjectSettings.globalize_path("res://../docs/2_5d_style_reference.md"), failures)
 
 	var registry_script: Variant = load("res://scripts/autoload/DataRegistry.gd")
 	if registry_script == null:
@@ -32,6 +33,24 @@ func _initialize() -> void:
 		var save_data: Dictionary = game_state.to_save_data()
 		if save_data.get("debug_seed", 0) != 1517:
 			failures.append("GameState default debug seed must be 1517.")
+		if save_data.get("content_build_version", "") != "milestone_1_working_test":
+			failures.append("GameState content build version should identify the working test.")
+
+	var debug_service_script: Variant = load("res://scripts/autoload/DebugService.gd")
+	if debug_service_script == null:
+		failures.append("DebugService script failed to load.")
+	else:
+		var debug_service: Node = debug_service_script.new()
+		root.add_child(debug_service)
+		debug_service._ready()
+		for action_name in ["select", "move_command", "toggle_combat_overlay", "quick_save", "quick_load", "pause"]:
+			if not InputMap.has_action(action_name):
+				failures.append("Missing working-test input action: %s" % action_name)
+		debug_service.queue_free()
+
+	var graybox_scene: Variant = load("res://scenes/testbeds/bootstrap_graybox.tscn")
+	if graybox_scene == null:
+		failures.append("Bootstrap graybox scene failed to load.")
 
 	if failures.is_empty():
 		print("BALEN_TESTS_OK")
@@ -48,3 +67,7 @@ func _expect_file(path: String, failures: Array[String]) -> void:
 	if not FileAccess.file_exists(path):
 		failures.append("Missing expected file: %s" % path)
 
+
+func _expect_external_file(path: String, failures: Array[String]) -> void:
+	if not FileAccess.file_exists(path):
+		failures.append("Missing expected file: %s" % path)

@@ -2,7 +2,7 @@ extends Node
 
 const DEFAULT_DEBUG_SEED := 1517
 
-var content_build_version := "milestone_0"
+var content_build_version := "milestone_1_working_test"
 var debug_seed := DEFAULT_DEBUG_SEED
 var current_scene_path := "res://scenes/ui/title_screen.tscn"
 var party_runtime_state: Dictionary = {}
@@ -48,4 +48,3 @@ func _dictionary_or_empty(value: Variant) -> Dictionary:
 		return value.duplicate(true)
 
 	return {}
-
