@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "source_filename": "balen 35_ (1).json",
+  "source_present": false,
+  "source_byte_size": null,
+  "source_hash_sha256": null,
+  "source_timestamp_utc": "2026-07-22T04:52:46Z",
+  "source_format": "Voyage.IO Heroes V35",
+  "heroes_version": "Voyage.IO Heroes V35",
+  "pinned_source_mods": [
+    {
+      "id": "zxKkFzisLYR-",
+      "version": 14
+    },
+    {
+      "id": "2LDeiL6rEHva",
+      "version": 2
+    }
+  ],
+  "authority_documents": [
+    "docs/Balen_Codex_Game_Testbed_Plan.md",
+    "docs/Balen_World_Canon_Bible.md"
+  ],
+  "notes": [
+    "Original Voyage JSON has not been added to the repository yet.",
+    "Treat this manifest as a placeholder record until the source JSON can be copied into source_data/voyage/ unchanged and hashed."
+  ]
+}
+

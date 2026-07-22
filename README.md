@@ -20,3 +20,29 @@ Current implementation target: Milestone 0, repository and rules foundation.
 
 Do not begin later milestones until the current milestone's exit tests pass.
 
+## Godot Project
+
+Godot project root: `balen/`
+
+Local Godot tools executable expected at the repository root:
+
+```powershell
+.\godot.windows.opt.tools.64.exe
+```
+
+Launch the editor:
+
+```powershell
+.\godot.windows.opt.tools.64.exe --path .\balen
+```
+
+Run the current headless checks:
+
+```powershell
+cd .\balen
+..\godot.windows.opt.tools.64.exe --headless --check-only --path .
+..\godot.windows.opt.tools.64.exe --headless --path . --script res://scripts/tests/test_runner.gd
+..\godot.windows.opt.tools.64.exe --headless --path . --script res://scripts/tools/content_validator.gd
+```
+
+Milestone 0 is intentionally small: boot to title screen, load a graybox scene, verify service skeletons, and keep source/canon rules visible.
