@@ -66,10 +66,10 @@ Crossroads Plaza can be manually shaped in Godot:
 
 1. Open `balen/scenes/testbeds/bootstrap_graybox.tscn`.
 2. Expand `MapAuthoring`.
-3. Move, duplicate, rename, or resize `PlazaAuthoringNode` children under `Buildings`, `Tents`, `Routes`, `Spawns`, `Crowd`, `Banners`, and `CombatAreas`.
+3. Move, duplicate, rename, or resize `PlazaAuthoringNode` children under `Ground`, `Buildings`, `Tents`, `Routes`, `Spawns`, `Crowd`, `Banners`, and `CombatAreas`.
 4. Use `grid_position` and `footprint` for tile placement. For buildings and walls, enable `blocks_movement` so click-to-move respects the visible footprint.
 
-The light road and grey sidewalk base is still procedurally generated for this pass. The manually authored nodes control the physical plaza pieces layered over it.
+Ground authoring uses broad editable regions: road nodes are the light plaza routes, sidewalk nodes are the grey pedestrian areas, and prop/building nodes sit on top of them.
 
 Working test controls:
 

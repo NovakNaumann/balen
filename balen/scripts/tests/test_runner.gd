@@ -75,6 +75,10 @@ func _initialize() -> void:
 		failures.append("Bootstrap graybox scene failed to load.")
 	else:
 		var graybox_instance: Node = graybox_scene.instantiate()
+		if graybox_instance.get_node_or_null("MapAuthoring/Ground/Roads/North South Fountain Boulevard") == null:
+			failures.append("Bootstrap graybox scene is missing editable road ground authoring nodes.")
+		if graybox_instance.get_node_or_null("MapAuthoring/Ground/Sidewalks/Fountain Pedestrian Apron") == null:
+			failures.append("Bootstrap graybox scene is missing editable sidewalk ground authoring nodes.")
 		if graybox_instance.get_node_or_null("MapAuthoring/Buildings") == null:
 			failures.append("Bootstrap graybox scene is missing editable building authoring nodes.")
 		if graybox_instance.get_node_or_null("MapAuthoring/Routes/The Ringmarket") == null:

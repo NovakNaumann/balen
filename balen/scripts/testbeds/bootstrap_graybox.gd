@@ -9,6 +9,9 @@ const FOUNTAIN_GRID := Vector2i(0, -6)
 const EAST_WEST_ROAD_Y := 7
 const EVIDENCE_GRID := Vector2i(-9, 11)
 const AUTHORING_ROOT_PATH := NodePath("MapAuthoring")
+const AUTHORING_KIND_ROAD := 0
+const AUTHORING_KIND_SIDEWALK := 1
+const AUTHORING_KIND_FOUNDATION := 2
 const AUTHORING_KIND_BUILDING := 3
 const AUTHORING_KIND_TENT := 4
 const AUTHORING_KIND_ROUTE := 5
@@ -182,9 +185,12 @@ func _rebuild_world() -> void:
 	_actor_nodes.clear()
 	_add_architecture_foundation_fill()
 	_add_nonwalkable_boundary_fill()
-	_add_diamond_floor(Vector2i.ZERO, FLOOR_HALF_EXTENTS, Color(0.61, 0.56, 0.48), "Crossroads Plaza Stone")
-	_add_ring_city_plaza_bands()
-	_add_radial_roads()
+	if _has_authored_ground():
+		_add_authored_ground_tiles()
+	else:
+		_add_diamond_floor(Vector2i.ZERO, FLOOR_HALF_EXTENTS, Color(0.61, 0.56, 0.48), "Crossroads Plaza Stone")
+		_add_ring_city_plaza_bands()
+		_add_radial_roads()
 	_add_outer_canals_and_bridges()
 	_add_citadel_axis()
 	_add_central_fountain()
@@ -505,6 +511,25 @@ func _authored_placement_definitions(kind: int) -> Array[Dictionary]:
 	return result
 
 
+func _has_authored_ground() -> bool:
+	return not _authoring_nodes(AUTHORING_KIND_ROAD).is_empty() or not _authoring_nodes(AUTHORING_KIND_SIDEWALK).is_empty() or not _authoring_nodes(AUTHORING_KIND_FOUNDATION).is_empty()
+
+
+func _grid_in_placement(grid_position: Vector2i, placement: Dictionary) -> bool:
+	var origin: Vector2i = placement.get("grid", placement.get("origin", Vector2i.ZERO))
+	var footprint: Vector2i = placement.get("footprint", Vector2i.ONE)
+	var within_x := grid_position.x >= origin.x and grid_position.x < origin.x + footprint.x
+	var within_y := grid_position.y >= origin.y and grid_position.y < origin.y + footprint.y
+	return within_x and within_y
+
+
+func _is_authored_ground_cell(grid_position: Vector2i, kind: int) -> bool:
+	for placement in _authored_placement_definitions(kind):
+		if _grid_in_placement(grid_position, placement):
+			return true
+	return false
+
+
 func _add_architecture_foundation_fill() -> void:
 	for blocker in _blocker_definitions():
 		var origin: Vector2i = blocker.get("origin", Vector2i.ZERO)
@@ -552,6 +577,35 @@ func _add_diamond_floor(origin: Vector2i, half_extents: Vector2i, color: Color, 
 			tile.polygon = _diamond(tile_position)
 			tile.color = color.lightened(0.08 if (x + y) % 2 == 0 else 0.0)
 			tile.z_index = int(tile_position.y)
+			_world_root.add_child(tile)
+
+
+func _add_authored_ground_tiles() -> void:
+	for foundation in _authored_placement_definitions(AUTHORING_KIND_FOUNDATION):
+		_add_authored_ground_placement(foundation, "Foundation", 0)
+	for sidewalk in _authored_placement_definitions(AUTHORING_KIND_SIDEWALK):
+		_add_authored_ground_placement(sidewalk, "Sidewalk", 1)
+	for road in _authored_placement_definitions(AUTHORING_KIND_ROAD):
+		_add_authored_ground_placement(road, "Road", 2)
+
+
+func _add_authored_ground_placement(placement: Dictionary, suffix: String, z_offset: int) -> void:
+	var origin: Vector2i = placement.get("grid", Vector2i.ZERO)
+	var footprint: Vector2i = placement.get("footprint", Vector2i.ONE)
+	var base_color: Color = placement.get("color", Color(0.61, 0.56, 0.48))
+	var placement_name := str(placement.get("name", "Authored Ground"))
+	for x in range(origin.x, origin.x + footprint.x):
+		for y in range(origin.y, origin.y + footprint.y):
+			var grid_position := Vector2i(x, y)
+			if abs(grid_position.x) > FLOOR_HALF_EXTENTS.x or abs(grid_position.y) > FLOOR_HALF_EXTENTS.y:
+				continue
+
+			var center := _iso(grid_position)
+			var tile := Polygon2D.new()
+			tile.name = "%s %s %d,%d" % [placement_name, suffix, x, y]
+			tile.polygon = _diamond(center)
+			tile.color = base_color.lightened(0.08 if (x + y) % 2 == 0 else 0.0)
+			tile.z_index = int(center.y) + z_offset
 			_world_root.add_child(tile)
 
 
@@ -1052,6 +1106,9 @@ func _is_grid_blocked_by_architecture(grid_position: Vector2i) -> bool:
 
 
 func _is_plaza_road_cell(grid_position: Vector2i) -> bool:
+	if not _authoring_nodes(AUTHORING_KIND_ROAD).is_empty():
+		return _is_authored_ground_cell(grid_position, AUTHORING_KIND_ROAD)
+
 	var on_main_boulevard: bool = abs(grid_position.x) <= 4
 	var on_fountain_apron: bool = _ring_radius(grid_position) <= 10.8
 	var on_east_west_exit: bool = abs(grid_position.y - EAST_WEST_ROAD_Y) <= 1 and abs(grid_position.x) <= FLOOR_HALF_EXTENTS.x

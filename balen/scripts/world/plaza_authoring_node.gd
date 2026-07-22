@@ -84,12 +84,36 @@ func _draw() -> void:
 		return
 
 	var preview_color := color
-	preview_color.a = 0.45
+	preview_color.a = _preview_alpha()
 	draw_colored_polygon(_footprint_polygon(), preview_color)
 	if blocks_movement:
 		draw_polyline(_footprint_polygon(), Color(1.0, 0.25, 0.18, 0.85), 3.0, true)
 	else:
-		draw_polyline(_footprint_polygon(), Color(0.2, 0.8, 1.0, 0.7), 2.0, true)
+		draw_polyline(_footprint_polygon(), _preview_outline_color(), _preview_outline_width(), true)
+
+
+func _preview_alpha() -> float:
+	if kind == AuthoringKind.ROAD or kind == AuthoringKind.SIDEWALK or kind == AuthoringKind.FOUNDATION:
+		return 0.78
+	return 0.45
+
+
+func _preview_outline_color() -> Color:
+	match kind:
+		AuthoringKind.ROAD:
+			return Color(1.0, 0.86, 0.42, 0.96)
+		AuthoringKind.SIDEWALK:
+			return Color(0.66, 0.72, 0.76, 0.92)
+		AuthoringKind.FOUNDATION:
+			return Color(0.42, 0.42, 0.36, 0.88)
+		_:
+			return Color(0.2, 0.8, 1.0, 0.7)
+
+
+func _preview_outline_width() -> float:
+	if kind == AuthoringKind.ROAD or kind == AuthoringKind.SIDEWALK or kind == AuthoringKind.FOUNDATION:
+		return 3.0
+	return 2.0
 
 
 func _footprint_polygon() -> PackedVector2Array:
