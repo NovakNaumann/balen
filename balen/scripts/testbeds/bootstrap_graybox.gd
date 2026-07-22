@@ -31,6 +31,13 @@ const AUTHORING_KIND_SPAWN := 6
 const AUTHORING_KIND_CROWD := 7
 const AUTHORING_KIND_BANNER := 8
 const AUTHORING_KIND_COMBAT_AREA := 9
+const AUTHORING_RENDER_AUTO := 0
+const AUTHORING_RENDER_GROUND_REGION := 1
+const AUTHORING_RENDER_BUILDING_MASS := 2
+const AUTHORING_RENDER_MODULAR_BLOCK := 3
+const AUTHORING_RENDER_MARKER := 4
+const AUTHORING_RENDER_ACTOR := 5
+const AUTHORING_RENDER_COMBAT_AREA := 6
 
 const ACTOR_DEFINITIONS := [
 	{"id": "debug.knight", "name": "DEBUG Knight", "grid": Vector2i(-2, 20), "color": Color(0.28, 0.42, 0.58)},
@@ -518,9 +525,34 @@ func _authored_placement_definitions(kind: int) -> Array[Dictionary]:
 			"height": node.get("height_tiles"),
 			"color": node.get("color"),
 			"roof": node.get("roof_color"),
-			"awning": node.get("awning_color")
+			"awning": node.get("awning_color"),
+			"render_style": _authored_render_style(node)
 		})
 	return result
+
+
+func _authored_render_style(node: Node) -> int:
+	if node.has_method("get_render_style"):
+		return int(node.call("get_render_style"))
+	return _default_render_style_for_kind(int(node.get("kind")))
+
+
+func _default_render_style_for_kind(kind: int) -> int:
+	match kind:
+		AUTHORING_KIND_ROAD, AUTHORING_KIND_SIDEWALK, AUTHORING_KIND_FOUNDATION:
+			return AUTHORING_RENDER_GROUND_REGION
+		AUTHORING_KIND_BUILDING:
+			return AUTHORING_RENDER_BUILDING_MASS
+		AUTHORING_KIND_TENT:
+			return AUTHORING_RENDER_MODULAR_BLOCK
+		AUTHORING_KIND_ROUTE, AUTHORING_KIND_CROWD, AUTHORING_KIND_BANNER:
+			return AUTHORING_RENDER_MARKER
+		AUTHORING_KIND_SPAWN:
+			return AUTHORING_RENDER_ACTOR
+		AUTHORING_KIND_COMBAT_AREA:
+			return AUTHORING_RENDER_COMBAT_AREA
+		_:
+			return AUTHORING_RENDER_MARKER
 
 
 func _authored_grid_position(node: Node) -> Vector2i:
@@ -789,7 +821,11 @@ func _add_authored_buildings() -> void:
 		var roof_color: Color = building.get("roof", Color(0.16, 0.31, 0.46))
 		var awning_color: Color = building.get("awning", Color.TRANSPARENT)
 		var building_name := str(building.get("name", "Authored Building"))
-		_add_plaza_building(building_name, grid_position, footprint, height, body_color, roof_color)
+		var render_style := int(building.get("render_style", AUTHORING_RENDER_BUILDING_MASS))
+		if render_style == AUTHORING_RENDER_MODULAR_BLOCK:
+			_add_repeated_isometric_blocks(building_name, grid_position, footprint, height, body_color)
+		else:
+			_add_plaza_building(building_name, grid_position, footprint, height, body_color, roof_color)
 		if awning_color.a > 0.0:
 			_add_frontage_awning("%s Awning" % building_name, grid_position + Vector2i(0, footprint.y - 1), Vector2i(footprint.x, 1), awning_color)
 
@@ -814,7 +850,11 @@ func _add_market_tents() -> void:
 		var footprint: Vector2i = tent.get("footprint", Vector2i.ONE)
 		var height := float(tent.get("height", 0.85))
 		var color: Color = tent.get("color", Color(0.35, 0.26, 0.20))
-		_add_repeated_isometric_blocks(str(tent.get("name", "Market Tent")), grid_position, footprint, height, color)
+		var render_style := int(tent.get("render_style", AUTHORING_RENDER_MODULAR_BLOCK))
+		if render_style == AUTHORING_RENDER_BUILDING_MASS:
+			_add_isometric_block(str(tent.get("name", "Market Tent")), grid_position, footprint, height, color)
+		else:
+			_add_repeated_isometric_blocks(str(tent.get("name", "Market Tent")), grid_position, footprint, height, color)
 
 
 func _add_civic_banners() -> void:

@@ -54,5 +54,6 @@ Painterly realism references for early sprite and environment direction:
 
 - Prefer `Node2D`, `CanvasItem` layers, `TileMapLayer` or authored tile/object layers, sprite sheets, polygon placeholders, and deterministic depth ordering.
 - Ground authoring nodes define visible road and sidewalk regions in the editor. `blocks_movement` on an authored plaza node defines its footprint as non-walkable unless the cell is an authored road exit.
+- Placeable map assets should come from `MapAssetCatalog` presets where possible. Presets define category, footprint, height, collision, color, and render style so a road, sidewalk, building mass, modular market prop, marker, or combat area behaves correctly when placed.
 - Keep combat math and combat state separate from presentation. The scene should display tactical state; it should not own the resolver rules.
 - For Milestone 0, graybox geometry may use polygons and labels. Later milestones should replace these with approved painterly isometric assets.

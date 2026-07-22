@@ -67,9 +67,11 @@ Crossroads Plaza can be manually shaped in Godot:
 1. Open `balen/scenes/testbeds/bootstrap_graybox.tscn`.
 2. Expand `MapAuthoring`.
 3. Move, duplicate, rename, or resize `PlazaAuthoringNode` children under `Ground`, `Buildings`, `Tents`, `Routes`, `Spawns`, `Crowd`, `Banners`, and `CombatAreas`.
-4. Use `grid_position` and `footprint` for tile placement. For buildings and walls, enable `blocks_movement` so click-to-move respects the visible footprint.
+4. Choose an `asset_id` preset on the node to apply its category, footprint, height, collision, colors, and render style.
+5. Use `grid_position` and `footprint` for tile placement. For buildings and walls, enable `blocks_movement` so click-to-move respects the visible footprint.
 
 Ground authoring uses broad editable regions: road nodes are the light plaza routes, sidewalk nodes are the grey pedestrian areas, and prop/building nodes sit on top of them.
+Map asset presets live in `balen/scripts/world/map_asset_catalog.gd`; `PlazaAuthoringNode` uses them as a selectable in-editor asset palette.
 
 Viewport movement is tile-snapped: dragging a `PlazaAuthoringNode` with Godot's move tool updates its `grid_position` to the nearest isometric tile.
 Building nodes also preview their vertical 2.5D volume in the editor, so leave space for the orange/tall volume outline, not only the flat red footprint.

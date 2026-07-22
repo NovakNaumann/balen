@@ -2,6 +2,8 @@
 extends Node2D
 class_name PlazaAuthoringNode
 
+const ASSET_CATALOG := preload("res://scripts/world/map_asset_catalog.gd")
+
 enum AuthoringKind {
 	ROAD,
 	SIDEWALK,
@@ -15,13 +17,49 @@ enum AuthoringKind {
 	COMBAT_AREA
 }
 
+enum RenderStyle {
+	AUTO,
+	GROUND_REGION,
+	BUILDING_MASS,
+	MODULAR_BLOCK,
+	MARKER,
+	ACTOR,
+	COMBAT_AREA
+}
+
 const TILE_SIZE := Vector2(112.0, 56.0)
 
 var _is_syncing_position := false
 
+@export_enum(
+	"custom",
+	"ground.road.primary_boulevard",
+	"ground.road.ring_segment",
+	"ground.sidewalk.civic_apron",
+	"ground.foundation.masonry",
+	"building.civic_facade_blue",
+	"building.guild_front",
+	"building.arcade_row",
+	"market.stall.blue",
+	"market.stall.row",
+	"civic.banner.blue_gold",
+	"route.marker",
+	"crowd.marker",
+	"combat.same_scene_area"
+) var asset_id := ASSET_CATALOG.ASSET_CUSTOM:
+	set(value):
+		asset_id = value
+		_apply_asset_preset(value)
+		queue_redraw()
+
 @export var kind: AuthoringKind = AuthoringKind.BUILDING:
 	set(value):
 		kind = value
+		queue_redraw()
+
+@export var render_style: RenderStyle = RenderStyle.AUTO:
+	set(value):
+		render_style = value
 		queue_redraw()
 
 @export var grid_position := Vector2i.ZERO:
@@ -62,6 +100,8 @@ var _is_syncing_position := false
 		blocks_movement = value
 		queue_redraw()
 
+@export_multiline var asset_notes := ""
+
 func _ready() -> void:
 	_sync_position_to_grid()
 	queue_redraw()
@@ -82,6 +122,10 @@ func get_authoring_kind() -> int:
 	return int(kind)
 
 
+func get_render_style() -> int:
+	return int(_effective_render_style())
+
+
 func _sync_position_to_grid() -> void:
 	_is_syncing_position = true
 	position = grid_to_iso(grid_position)
@@ -95,12 +139,55 @@ func _draw() -> void:
 	var preview_color := color
 	preview_color.a = _preview_alpha()
 	draw_colored_polygon(_footprint_polygon(), preview_color)
-	if kind == AuthoringKind.BUILDING:
+	if _effective_render_style() == RenderStyle.BUILDING_MASS:
 		_draw_building_volume_preview()
+	elif _effective_render_style() == RenderStyle.MODULAR_BLOCK:
+		_draw_modular_preview()
 	if blocks_movement:
 		draw_polyline(_footprint_polygon(), Color(1.0, 0.25, 0.18, 0.85), 3.0, true)
 	else:
 		draw_polyline(_footprint_polygon(), _preview_outline_color(), _preview_outline_width(), true)
+
+
+func _apply_asset_preset(selected_asset_id: String) -> void:
+	if selected_asset_id == ASSET_CATALOG.ASSET_CUSTOM:
+		return
+
+	var asset := ASSET_CATALOG.get_asset(selected_asset_id)
+	if asset.is_empty():
+		return
+
+	kind = int(asset.get("kind", int(kind)))
+	render_style = int(asset.get("render_style", int(render_style)))
+	footprint = asset.get("footprint", footprint)
+	height_tiles = float(asset.get("height", height_tiles))
+	display_name = str(asset.get("label", display_name))
+	asset_notes = "%s\n%s" % [str(asset.get("category", "")), selected_asset_id]
+	color = asset.get("color", color)
+	roof_color = asset.get("roof_color", roof_color)
+	awning_color = asset.get("awning_color", awning_color)
+	blocks_movement = bool(asset.get("blocks_movement", blocks_movement))
+
+
+func _effective_render_style() -> int:
+	if render_style != RenderStyle.AUTO:
+		return render_style
+
+	match kind:
+		AuthoringKind.ROAD, AuthoringKind.SIDEWALK, AuthoringKind.FOUNDATION:
+			return RenderStyle.GROUND_REGION
+		AuthoringKind.BUILDING:
+			return RenderStyle.BUILDING_MASS
+		AuthoringKind.TENT:
+			return RenderStyle.MODULAR_BLOCK
+		AuthoringKind.ROUTE, AuthoringKind.CROWD, AuthoringKind.BANNER:
+			return RenderStyle.MARKER
+		AuthoringKind.SPAWN:
+			return RenderStyle.ACTOR
+		AuthoringKind.COMBAT_AREA:
+			return RenderStyle.COMBAT_AREA
+		_:
+			return RenderStyle.MARKER
 
 
 func _preview_alpha() -> float:
@@ -148,6 +235,17 @@ func _draw_building_volume_preview() -> void:
 	draw_polyline(_volume_outline(corners, lift), Color(1.0, 0.46, 0.24, 0.88), 2.0, true)
 
 
+func _draw_modular_preview() -> void:
+	var module_outline := Color(0.95, 0.82, 0.35, 0.88)
+	for x in range(footprint.x):
+		for y in range(footprint.y):
+			var origin := grid_to_iso(Vector2i(x, y))
+			var module_points := PackedVector2Array()
+			for point in _unit_footprint_polygon():
+				module_points.append(origin + point)
+			draw_polyline(module_points, module_outline, 1.5, true)
+
+
 func _volume_outline(corners: Array, lift: Vector2) -> PackedVector2Array:
 	return PackedVector2Array([
 		corners[0] + lift,
@@ -165,6 +263,15 @@ func _footprint_polygon() -> PackedVector2Array:
 		grid_to_iso(Vector2i(footprint.x, 0)),
 		grid_to_iso(footprint),
 		grid_to_iso(Vector2i(0, footprint.y))
+	])
+
+
+func _unit_footprint_polygon() -> PackedVector2Array:
+	return PackedVector2Array([
+		Vector2.ZERO,
+		grid_to_iso(Vector2i(1, 0)),
+		grid_to_iso(Vector2i(1, 1)),
+		grid_to_iso(Vector2i(0, 1))
 	])
 
 

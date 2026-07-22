@@ -11,6 +11,7 @@ func _initialize() -> void:
 	_expect_file("res://scripts/autoload/GameState.gd", failures)
 	_expect_file("res://scripts/autoload/SaveService.gd", failures)
 	_expect_file("res://scripts/autoload/DebugService.gd", failures)
+	_expect_file("res://scripts/world/map_asset_catalog.gd", failures)
 	_expect_file("res://scripts/world/plaza_authoring_node.gd", failures)
 	_expect_file("res://source_data/voyage/source_manifest.json", failures)
 	_expect_file("res://source_data/voyage/balen_35_low_hp_d20_known_patch.json", failures)
@@ -125,6 +126,21 @@ func _initialize() -> void:
 		var world_position: Vector2 = authoring_script.grid_to_iso(grid)
 		if authoring_script.world_to_grid(world_position) != grid:
 			failures.append("Plaza authoring grid/world conversion should round-trip for editor movement.")
+		var placement: Node = authoring_script.new()
+		placement.asset_id = "market.stall.row"
+		if int(placement.kind) != 4:
+			failures.append("Market row asset should apply the tent authoring kind.")
+		if int(placement.render_style) != 3:
+			failures.append("Market row asset should use modular block rendering.")
+		if placement.footprint != Vector2i(1, 3):
+			failures.append("Market row asset should apply its catalog footprint.")
+		placement.queue_free()
+
+	var asset_catalog: Variant = load("res://scripts/world/map_asset_catalog.gd")
+	if asset_catalog == null:
+		failures.append("Map asset catalog failed to load.")
+	elif not asset_catalog.has_asset("building.guild_front"):
+		failures.append("Map asset catalog should expose a guild-front building preset.")
 
 	if failures.is_empty():
 		print("BALEN_TESTS_OK")
