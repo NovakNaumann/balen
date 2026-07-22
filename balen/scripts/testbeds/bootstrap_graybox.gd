@@ -151,6 +151,7 @@ func _rebuild_world() -> void:
 	_add_citadel_axis()
 	_add_central_fountain()
 	_add_grand_city_backdrop()
+	_add_plaza_frontage_architecture()
 	_add_market_tents()
 	_add_civic_banners()
 	_add_route_markers()
@@ -494,36 +495,64 @@ func _add_central_fountain() -> void:
 
 func _add_grand_city_backdrop() -> void:
 	for facade in [
-		{"name": "Left Ring City Facade A", "grid": Vector2i(-15, -10), "footprint": Vector2i(2, 4), "height": 2.6, "color": Color(0.69, 0.64, 0.54)},
-		{"name": "Left Ring City Facade B", "grid": Vector2i(-15, 0), "footprint": Vector2i(2, 5), "height": 3.2, "color": Color(0.63, 0.56, 0.45)},
-		{"name": "Left Ring City Facade C", "grid": Vector2i(-15, 11), "footprint": Vector2i(2, 5), "height": 2.8, "color": Color(0.66, 0.59, 0.48)},
-		{"name": "Right Ring City Facade A", "grid": Vector2i(14, -10), "footprint": Vector2i(2, 4), "height": 2.7, "color": Color(0.70, 0.65, 0.55)},
-		{"name": "Right Ring City Facade B", "grid": Vector2i(14, 0), "footprint": Vector2i(2, 5), "height": 3.4, "color": Color(0.61, 0.55, 0.45)},
-		{"name": "Right Ring City Facade C", "grid": Vector2i(14, 11), "footprint": Vector2i(2, 5), "height": 3.0, "color": Color(0.68, 0.61, 0.50)},
-		{"name": "Lower Foreground Dome Left", "grid": Vector2i(-12, 23), "footprint": Vector2i(3, 2), "height": 3.5, "color": Color(0.16, 0.31, 0.46)},
-		{"name": "Lower Foreground Dome Right", "grid": Vector2i(9, 23), "footprint": Vector2i(3, 2), "height": 3.5, "color": Color(0.18, 0.34, 0.47)}
+		{"name": "Left Ring City Facade A", "grid": Vector2i(-18, -14), "footprint": Vector2i(5, 7), "height": 4.2, "color": Color(0.69, 0.64, 0.54), "roof": Color(0.12, 0.27, 0.43)},
+		{"name": "Left Ring City Facade B", "grid": Vector2i(-18, -5), "footprint": Vector2i(5, 8), "height": 4.9, "color": Color(0.63, 0.56, 0.45), "roof": Color(0.18, 0.34, 0.48)},
+		{"name": "Left Ring City Facade C", "grid": Vector2i(-18, 5), "footprint": Vector2i(5, 8), "height": 4.4, "color": Color(0.66, 0.59, 0.48), "roof": Color(0.40, 0.25, 0.19)},
+		{"name": "Left Ring City Facade D", "grid": Vector2i(-18, 15), "footprint": Vector2i(5, 7), "height": 4.0, "color": Color(0.70, 0.62, 0.50), "roof": Color(0.20, 0.40, 0.38)},
+		{"name": "Right Ring City Facade A", "grid": Vector2i(13, -14), "footprint": Vector2i(5, 7), "height": 4.3, "color": Color(0.70, 0.65, 0.55), "roof": Color(0.14, 0.31, 0.46)},
+		{"name": "Right Ring City Facade B", "grid": Vector2i(13, -5), "footprint": Vector2i(5, 8), "height": 5.1, "color": Color(0.61, 0.55, 0.45), "roof": Color(0.18, 0.35, 0.50)},
+		{"name": "Right Ring City Facade C", "grid": Vector2i(13, 5), "footprint": Vector2i(5, 8), "height": 4.6, "color": Color(0.68, 0.61, 0.50), "roof": Color(0.44, 0.27, 0.17)},
+		{"name": "Right Ring City Facade D", "grid": Vector2i(13, 15), "footprint": Vector2i(5, 7), "height": 4.1, "color": Color(0.66, 0.60, 0.50), "roof": Color(0.40, 0.24, 0.47)},
+		{"name": "Lower Foreground Dome Left", "grid": Vector2i(-15, 24), "footprint": Vector2i(6, 4), "height": 4.6, "color": Color(0.16, 0.31, 0.46), "roof": Color(0.08, 0.22, 0.38)},
+		{"name": "Lower Foreground Arcade", "grid": Vector2i(-6, 24), "footprint": Vector2i(12, 4), "height": 3.9, "color": Color(0.67, 0.61, 0.51), "roof": Color(0.36, 0.23, 0.17)},
+		{"name": "Lower Foreground Dome Right", "grid": Vector2i(9, 24), "footprint": Vector2i(6, 4), "height": 4.6, "color": Color(0.18, 0.34, 0.47), "roof": Color(0.08, 0.24, 0.39)}
 	]:
 		var grid_position: Vector2i = facade.grid
 		var footprint: Vector2i = facade.footprint
 		var height: float = facade.height
 		var color: Color = facade.color
-		_add_isometric_block(str(facade.name), grid_position, footprint, height, color)
+		var roof_color: Color = facade.roof
+		_add_plaza_building(str(facade.name), grid_position, footprint, height, color, roof_color)
 
 	for grid_position in [Vector2i(-11, -18), Vector2i(-7, -19), Vector2i(7, -19), Vector2i(11, -18), Vector2i(-12, 18), Vector2i(12, 18)]:
-		_add_isometric_block("Blue roof civic tower %s" % str(grid_position), grid_position, Vector2i(1, 1), 3.8, Color(0.12, 0.29, 0.48))
+		_add_plaza_building("Blue roof civic tower %s" % str(grid_position), grid_position, Vector2i(2, 2), 5.4, Color(0.70, 0.66, 0.56), Color(0.12, 0.29, 0.48))
+
+
+func _add_plaza_frontage_architecture() -> void:
+	for building in [
+		{"name": "Slayers Guild Plaza Front", "grid": Vector2i(-14, 2), "footprint": Vector2i(3, 6), "height": 3.7, "body": Color(0.58, 0.56, 0.50), "roof": Color(0.16, 0.18, 0.18), "awning": Color(0.30, 0.32, 0.31)},
+		{"name": "Left Ringmarket Row", "grid": Vector2i(-13, 10), "footprint": Vector2i(3, 7), "height": 3.2, "body": Color(0.66, 0.58, 0.46), "roof": Color(0.43, 0.25, 0.18), "awning": Color(0.54, 0.34, 0.22)},
+		{"name": "Permit Offices Arcade", "grid": Vector2i(-12, 17), "footprint": Vector2i(4, 4), "height": 3.5, "body": Color(0.70, 0.64, 0.52), "roof": Color(0.16, 0.31, 0.46), "awning": Color(0.11, 0.22, 0.49)},
+		{"name": "Ringmarket Plaza Front", "grid": Vector2i(11, 0), "footprint": Vector2i(3, 7), "height": 3.6, "body": Color(0.68, 0.61, 0.50), "roof": Color(0.48, 0.30, 0.17), "awning": Color(0.73, 0.45, 0.18)},
+		{"name": "Stable Yard Plaza Front", "grid": Vector2i(10, 11), "footprint": Vector2i(4, 8), "height": 3.1, "body": Color(0.61, 0.50, 0.39), "roof": Color(0.22, 0.40, 0.34), "awning": Color(0.25, 0.45, 0.36)}
+	]:
+		var grid_position: Vector2i = building.grid
+		var footprint: Vector2i = building.footprint
+		var height: float = building.height
+		var body_color: Color = building.body
+		var roof_color: Color = building.roof
+		var awning_color: Color = building.awning
+		_add_plaza_building(str(building.name), grid_position, footprint, height, body_color, roof_color)
+		_add_frontage_awning("%s Awning" % str(building.name), grid_position + Vector2i(0, footprint.y - 1), Vector2i(footprint.x, 1), awning_color)
+
+	for grid_position in [
+		Vector2i(-11, -8), Vector2i(-11, -4), Vector2i(-11, 0), Vector2i(-11, 8), Vector2i(-11, 14),
+		Vector2i(10, -8), Vector2i(10, -4), Vector2i(10, 4), Vector2i(10, 9), Vector2i(10, 15)
+	]:
+		_add_isometric_block("Plaza Arcade Pier %s" % str(grid_position), grid_position, Vector2i(1, 1), 1.9, Color(0.74, 0.69, 0.58))
 
 
 func _add_market_tents() -> void:
 	for tent in [
-		{"name": "Ringmarket Blue Awning", "grid": Vector2i(10, -4), "color": Color(0.18, 0.29, 0.58)},
-		{"name": "Ringmarket Amber Awning", "grid": Vector2i(11, 0), "color": Color(0.72, 0.43, 0.18)},
+		{"name": "Ringmarket Blue Awning", "grid": Vector2i(8, -4), "color": Color(0.18, 0.29, 0.58)},
+		{"name": "Ringmarket Amber Awning", "grid": Vector2i(8, 1), "color": Color(0.72, 0.43, 0.18)},
 		{"name": "Lower Blue Market Stall", "grid": Vector2i(9, 12), "color": Color(0.16, 0.27, 0.55)},
-		{"name": "Lower Violet Market Stall", "grid": Vector2i(8, 16), "color": Color(0.48, 0.29, 0.50)},
+		{"name": "Lower Violet Market Stall", "grid": Vector2i(7, 17), "color": Color(0.48, 0.29, 0.50)},
 		{"name": "Caravan Permit Desk", "grid": EVIDENCE_GRID, "color": Color(0.40, 0.25, 0.13)},
-		{"name": "Stable Tack Awning", "grid": Vector2i(11, 16), "color": Color(0.25, 0.45, 0.36)},
-		{"name": "Slayer Notice Awning", "grid": Vector2i(-11, 5), "color": Color(0.35, 0.36, 0.34)},
-		{"name": "Left Cloth Merchant", "grid": Vector2i(-11, 12), "color": Color(0.55, 0.35, 0.22)},
-		{"name": "Left Food Seller", "grid": Vector2i(-10, 16), "color": Color(0.22, 0.44, 0.34)}
+		{"name": "Stable Tack Awning", "grid": Vector2i(8, 16), "color": Color(0.25, 0.45, 0.36)},
+		{"name": "Slayer Notice Awning", "grid": Vector2i(-9, 5), "color": Color(0.35, 0.36, 0.34)},
+		{"name": "Left Cloth Merchant", "grid": Vector2i(-9, 12), "color": Color(0.55, 0.35, 0.22)},
+		{"name": "Left Food Seller", "grid": Vector2i(-8, 17), "color": Color(0.22, 0.44, 0.34)}
 	]:
 		var grid_position: Vector2i = tent.grid
 		_add_isometric_block(str(tent.name), grid_position, Vector2i(1, 1), 0.85, tent.color)
@@ -581,6 +610,45 @@ func _add_evidence_marker() -> void:
 	tag.add_theme_font_size_override("font_size", 13)
 	tag.z_index = int(tag.position.y) + 20
 	_world_root.add_child(tag)
+
+
+func _add_plaza_building(node_name: String, origin: Vector2i, footprint: Vector2i, height_tiles: float, body_color: Color, roof_color: Color) -> void:
+	_add_isometric_block("%s Body" % node_name, origin, footprint, height_tiles, body_color)
+
+	var tier_offset: int = maxi(1, int(floor(float(footprint.y) / 3.0)))
+	var upper_origin := origin + Vector2i(0, tier_offset)
+	var upper_footprint := Vector2i(footprint.x, maxi(1, footprint.y - tier_offset))
+	_add_isometric_block("%s Upper Mass" % node_name, upper_origin, upper_footprint, height_tiles + 0.8, body_color.lightened(0.05))
+	_add_roof_cap("%s Roof Cap" % node_name, upper_origin, upper_footprint, height_tiles + 1.05, roof_color)
+
+
+func _add_frontage_awning(node_name: String, origin: Vector2i, footprint: Vector2i, color: Color) -> void:
+	_add_isometric_block(node_name, origin, footprint, 0.55, color)
+
+
+func _add_roof_cap(node_name: String, origin: Vector2i, footprint: Vector2i, height_tiles: float, color: Color) -> void:
+	var corners := [
+		_iso(origin),
+		_iso(origin + Vector2i(footprint.x, 0)),
+		_iso(origin + footprint),
+		_iso(origin + Vector2i(0, footprint.y))
+	]
+	var lift := Vector2(0.0, -height_tiles * TILE_SIZE.y)
+	var eave := Vector2(0.0, -10.0)
+	var roof := PackedVector2Array([
+		corners[0] + lift + Vector2(0.0, -12.0),
+		corners[1] + lift + Vector2(18.0, 0.0),
+		corners[2] + lift + Vector2(0.0, 12.0),
+		corners[3] + lift + Vector2(-18.0, 0.0)
+	])
+	var ridge := PackedVector2Array([
+		corners[0] + lift + eave,
+		(corners[1] + corners[2]) * 0.5 + lift + Vector2(0.0, -32.0),
+		corners[2] + lift + Vector2(0.0, 12.0),
+		(corners[3] + corners[0]) * 0.5 + lift + Vector2(0.0, -32.0)
+	])
+	_add_polygon("%s Main" % node_name, roof, color, int(corners[2].y) + 18)
+	_add_polygon("%s Ridge" % node_name, ridge, color.lightened(0.10), int(corners[2].y) + 19)
 
 
 func _add_isometric_block(node_name: String, origin: Vector2i, footprint: Vector2i, height_tiles: float, color: Color) -> void:
