@@ -1157,6 +1157,9 @@ func _is_grid_walkable(grid_position: Vector2i) -> bool:
 	if _is_grid_blocked_by_architecture(grid_position):
 		return false
 
+	if _has_authored_ground():
+		return _is_authored_ground_cell(grid_position, AUTHORING_KIND_ROAD) or _is_authored_ground_cell(grid_position, AUTHORING_KIND_SIDEWALK)
+
 	var in_round_plaza: bool = _ring_radius(grid_position) <= 13.4
 	var in_sidewalk_apron: bool = abs(grid_position.y - EAST_WEST_ROAD_Y) <= 4 and abs(grid_position.x) <= 12
 	return _is_plaza_road_cell(grid_position) or in_round_plaza or in_sidewalk_apron

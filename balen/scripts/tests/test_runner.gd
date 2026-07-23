@@ -88,6 +88,15 @@ func _initialize() -> void:
 			failures.append("Bootstrap graybox scene is missing the editable combat area authoring node.")
 		if graybox_instance.has_method("_authoring_nodes") and graybox_instance.call("_authoring_nodes", 3).size() < 10:
 			failures.append("Bootstrap graybox should expose editable architecture authoring nodes.")
+		if graybox_instance.has_method("_is_grid_walkable"):
+			if not bool(graybox_instance.call("_is_grid_walkable", Vector2i(0, 0))):
+				failures.append("Authored Crossroads Plaza should keep the central fountain road walkable.")
+			if not bool(graybox_instance.call("_is_grid_walkable", Vector2i(-12, 7))):
+				failures.append("Authored Crossroads Plaza should keep the Slayers Guild road exit walkable.")
+			if not bool(graybox_instance.call("_is_grid_walkable", Vector2i(12, 7))):
+				failures.append("Authored Crossroads Plaza should keep the Ringmarket road exit walkable.")
+			if bool(graybox_instance.call("_is_grid_walkable", Vector2i(-14, 2))):
+				failures.append("Authored Crossroads Plaza building walls should block movement.")
 		graybox_instance.queue_free()
 
 	var graybox_script: Variant = load("res://scripts/testbeds/bootstrap_graybox.gd")
