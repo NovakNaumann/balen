@@ -66,11 +66,20 @@ Crossroads Plaza is now driven by `balen/maps/crossroads_plaza.json`.
 
 Use the side builder scene for map edits:
 
+Fast launch:
+
+```powershell
+.\Open_Map_Builder.bat
+```
+
+Editor launch:
+
 1. Open `balen/scenes/tools/map_builder.tscn`.
-2. Paint roads, sidewalks, paths, and water as individual isometric terrain cells.
-3. Use ellipse and ring shapes for round plazas, true circular roads, and fountain paths.
-4. Place buildings, tents, route exits, spawns, banners, and combat areas as objects.
-5. Press `S` in the builder to save back to `balen/maps/crossroads_plaza.json`.
+2. Use **Run Current Scene** / `F6`. The normal Play Project button runs the title/testbed main scene.
+3. Paint roads, sidewalks, paths, and water as individual isometric terrain cells.
+4. Use ellipse and ring shapes for round plazas, true circular roads, and fountain paths.
+5. Place buildings, tents, route exits, spawns, banners, and combat areas as objects.
+6. Press `S` in the builder to save back to `balen/maps/crossroads_plaza.json`.
 
 The runtime scene `balen/scenes/testbeds/bootstrap_graybox.tscn` loads this JSON directly. Roads, sidewalks, and paths define walkable cells; buildings and wall-like structures block movement through their placed footprints.
 
