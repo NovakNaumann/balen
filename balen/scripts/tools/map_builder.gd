@@ -14,9 +14,11 @@ const TERRAIN_OPTIONS := [
 ]
 const SHAPE_OPTIONS := ["brush", "line", "ellipse", "ring"]
 const OBJECT_PRESETS := [
-	{"name": "Civic Facade", "asset_id": "building.civic_facade_blue", "kind": 3, "footprint": Vector2i(5, 7), "height": 4.2, "color": Color(0.69, 0.64, 0.54), "roof_color": Color(0.12, 0.27, 0.43), "blocks_movement": true},
-	{"name": "Guild Front", "asset_id": "building.guild_front", "kind": 3, "footprint": Vector2i(4, 5), "height": 3.7, "color": Color(0.58, 0.56, 0.50), "roof_color": Color(0.16, 0.18, 0.18), "blocks_movement": true},
-	{"name": "Arcade Row", "asset_id": "building.arcade_row", "kind": 3, "footprint": Vector2i(8, 3), "height": 3.2, "color": Color(0.66, 0.58, 0.46), "roof_color": Color(0.43, 0.25, 0.18), "blocks_movement": true},
+	{"name": "Aethelgard Merchant House", "asset_id": "building.aethelgard_merchant_house", "kind": 3, "render_style": 2, "footprint": Vector2i(5, 6), "height": 4.0, "color": Color(0.72, 0.67, 0.56), "roof_color": Color(0.11, 0.27, 0.42), "awning_color": Color(0.77, 0.63, 0.39), "blocks_movement": true},
+	{"name": "Golden Stein Tavern", "asset_id": "building.aethelgard_tavern", "kind": 3, "render_style": 2, "footprint": Vector2i(5, 5), "height": 3.7, "color": Color(0.66, 0.61, 0.50), "roof_color": Color(0.13, 0.24, 0.36), "awning_color": Color(0.12, 0.26, 0.52), "blocks_movement": true},
+	{"name": "Blueglass Curio Shop", "asset_id": "building.aethelgard_curio_shop", "kind": 3, "render_style": 2, "footprint": Vector2i(4, 5), "height": 4.4, "color": Color(0.74, 0.69, 0.58), "roof_color": Color(0.10, 0.29, 0.48), "awning_color": Color(0.10, 0.25, 0.54), "blocks_movement": true},
+	{"name": "Civic Guildhall", "asset_id": "building.aethelgard_guildhall", "kind": 3, "render_style": 2, "footprint": Vector2i(7, 6), "height": 5.2, "color": Color(0.76, 0.72, 0.63), "roof_color": Color(0.12, 0.28, 0.46), "awning_color": Color(0.13, 0.25, 0.51), "blocks_movement": true},
+	{"name": "Ring Arcade Row", "asset_id": "building.aethelgard_arcade_row", "kind": 3, "render_style": 2, "footprint": Vector2i(8, 3), "height": 3.2, "color": Color(0.68, 0.60, 0.48), "roof_color": Color(0.38, 0.24, 0.17), "awning_color": Color(0.55, 0.36, 0.23), "blocks_movement": true},
 	{"name": "Blue Stall", "asset_id": "market.stall.blue", "kind": 4, "footprint": Vector2i.ONE, "height": 0.85, "color": Color(0.16, 0.27, 0.55), "blocks_movement": false},
 	{"name": "Stall Row", "asset_id": "market.stall.row", "kind": 4, "footprint": Vector2i(1, 3), "height": 0.85, "color": Color(0.55, 0.35, 0.22), "blocks_movement": false},
 	{"name": "Route Marker", "asset_id": "route.marker", "kind": 5, "footprint": Vector2i.ONE, "height": 0.55, "color": Color(0.73, 0.65, 0.50), "blocks_movement": false},
@@ -113,6 +115,7 @@ func _normalize_placement(raw_placement: Dictionary) -> Dictionary:
 		"color": MAP_DATA.color_from_array(raw_placement.get("color", []), fallback_color),
 		"roof_color": MAP_DATA.color_from_array(raw_placement.get("roof_color", []), Color(0.16, 0.31, 0.46)),
 		"awning_color": MAP_DATA.color_from_array(raw_placement.get("awning_color", []), Color.TRANSPARENT),
+		"render_style": int(raw_placement.get("render_style", 0)),
 		"blocks_movement": bool(raw_placement.get("blocks_movement", kind == 3))
 	}
 	if raw_placement.has("actor_id"):
@@ -486,6 +489,7 @@ func _place_object(grid_position: Vector2i) -> void:
 		"color": preset["color"],
 		"roof_color": preset.get("roof_color", Color(0.16, 0.31, 0.46)),
 		"awning_color": preset.get("awning_color", Color.TRANSPARENT),
+		"render_style": int(preset.get("render_style", 0)),
 		"blocks_movement": bool(preset["blocks_movement"])
 	}
 	if int(preset["kind"]) == 6:
@@ -538,6 +542,7 @@ func _save_map() -> void:
 			"height": float(placement["height"]),
 			"elevation": float(placement.get("elevation", 0.0)),
 			"color": MAP_DATA.color_to_array(placement["color"]),
+			"render_style": int(placement.get("render_style", 0)),
 			"blocks_movement": bool(placement["blocks_movement"])
 		}
 		if placement.has("roof_color"):
@@ -609,11 +614,12 @@ func _draw_placement_model(placement: Dictionary) -> void:
 	var height := float(placement.get("height", 1.0))
 	var elevation := float(placement.get("elevation", 0.0))
 	var color: Color = placement.get("color", Color(0.70, 0.64, 0.52))
+	var asset_id := str(placement.get("asset_id", "custom"))
 	var is_selected := _placement_index_for_identity(placement) == _selected_placement_index
 
 	match kind:
 		3:
-			_draw_plaza_building_model(origin, footprint, height, elevation, color, placement.get("roof_color", Color(0.16, 0.31, 0.46)))
+			_draw_plaza_building_model(origin, footprint, height, elevation, color, placement.get("roof_color", Color(0.16, 0.31, 0.46)), placement.get("awning_color", Color.TRANSPARENT), asset_id)
 		4:
 			_draw_repeated_block_model(origin, footprint, height, elevation, color)
 		9:
@@ -634,13 +640,152 @@ func _placement_index_for_identity(target: Dictionary) -> int:
 	return -1
 
 
-func _draw_plaza_building_model(origin: Vector2i, footprint: Vector2i, height_tiles: float, elevation_tiles: float, body_color: Color, roof_color: Color) -> void:
+func _draw_plaza_building_model(origin: Vector2i, footprint: Vector2i, height_tiles: float, elevation_tiles: float, body_color: Color, roof_color: Color, awning_color: Color, asset_id: String) -> void:
+	var profile := _architecture_profile(asset_id)
 	_draw_isometric_block_model(origin, footprint, height_tiles, elevation_tiles, body_color)
 	var tier_offset: int = maxi(1, int(floor(float(footprint.y) / 3.0)))
 	var upper_origin := origin + Vector2i(0, tier_offset)
 	var upper_footprint := Vector2i(footprint.x, maxi(1, footprint.y - tier_offset))
 	_draw_isometric_block_model(upper_origin, upper_footprint, height_tiles + 0.8, elevation_tiles, body_color.lightened(0.05))
 	_draw_roof_cap_model(upper_origin, upper_footprint, height_tiles + 1.05, elevation_tiles, roof_color)
+	_draw_architecture_details(origin, footprint, height_tiles, elevation_tiles, body_color, roof_color, awning_color, profile)
+
+
+func _architecture_profile(asset_id: String) -> Dictionary:
+	match asset_id:
+		"building.aethelgard_tavern", "building.guild_front":
+			return {"windows": 5, "rows": 2, "spires": 3, "banner_count": 2, "shopfront": true, "sign": true, "dormers": 1, "tower": false, "arcade": false}
+		"building.aethelgard_curio_shop":
+			return {"windows": 4, "rows": 3, "spires": 5, "banner_count": 1, "shopfront": true, "sign": true, "dormers": 2, "tower": true, "arcade": false}
+		"building.aethelgard_guildhall", "building.civic_facade_blue":
+			return {"windows": 6, "rows": 3, "spires": 7, "banner_count": 3, "shopfront": false, "sign": false, "dormers": 2, "tower": true, "arcade": false}
+		"building.aethelgard_arcade_row", "building.arcade_row":
+			return {"windows": 7, "rows": 1, "spires": 4, "banner_count": 2, "shopfront": true, "sign": false, "dormers": 0, "tower": false, "arcade": true}
+		_:
+			return {"windows": 4, "rows": 2, "spires": 4, "banner_count": 1, "shopfront": true, "sign": false, "dormers": 1, "tower": false, "arcade": false}
+
+
+func _draw_architecture_details(origin: Vector2i, footprint: Vector2i, height_tiles: float, elevation_tiles: float, body_color: Color, roof_color: Color, awning_color: Color, profile: Dictionary) -> void:
+	var corners := _elevated_corners(origin, footprint, elevation_tiles)
+	var lift := Vector2(0.0, -height_tiles * TILE_SIZE.y)
+	var facade_top_left: Vector2 = corners[3] + lift
+	var facade_top_right: Vector2 = corners[2] + lift
+	var facade_bottom_left: Vector2 = corners[3]
+	var facade_bottom_right: Vector2 = corners[2]
+	var trim := Color(0.91, 0.69, 0.28)
+	var glass := Color(0.12, 0.30, 0.42)
+	var shadow := Color(0.05, 0.06, 0.06, 0.42)
+
+	draw_line(facade_top_left, facade_top_right, trim, 4.0)
+	draw_line(corners[0] + lift, corners[1] + lift, trim.darkened(0.10), 3.0)
+	draw_line(corners[1] + lift, corners[2] + lift, trim.darkened(0.06), 3.0)
+
+	var column_count: int = maxi(2, int(profile.get("windows", 4)))
+	for index in range(column_count):
+		var t := (float(index) + 0.5) / float(column_count)
+		var top_point := facade_top_left.lerp(facade_top_right, t)
+		var bottom_point := facade_bottom_left.lerp(facade_bottom_right, t)
+		var pier_top := facade_top_left.lerp(facade_top_right, t)
+		var pier_bottom := facade_bottom_left.lerp(facade_bottom_right, t)
+		if index % 2 == 0:
+			draw_line(pier_top, pier_bottom, body_color.lightened(0.16), 2.0)
+		for row in range(int(profile.get("rows", 2))):
+			var row_t := (float(row) + 1.0) / (float(profile.get("rows", 2)) + 1.45)
+			var window_center := top_point.lerp(bottom_point, row_t)
+			_draw_screen_rect(window_center + Vector2(0.0, -6.0), Vector2(20.0, 28.0), shadow)
+			_draw_screen_rect(window_center + Vector2(0.0, -8.0), Vector2(14.0, 22.0), glass.lightened(0.18 if row % 2 == 0 else 0.02))
+
+	var door_center := facade_top_left.lerp(facade_top_right, 0.5).lerp(facade_bottom_left.lerp(facade_bottom_right, 0.5), 0.82)
+	_draw_screen_rect(door_center + Vector2(0.0, -24.0), Vector2(36.0, 58.0), Color(0.18, 0.12, 0.08))
+	draw_arc(door_center + Vector2(0.0, -54.0), 21.0, PI, TAU, 20, trim, 3.0)
+
+	if awning_color.a > 0.0 or bool(profile.get("shopfront", false)):
+		var awning := awning_color if awning_color.a > 0.0 else Color(0.12, 0.26, 0.52)
+		var left := facade_bottom_left.lerp(facade_bottom_right, 0.18)
+		var right := facade_bottom_left.lerp(facade_bottom_right, 0.82)
+		var awning_poly := PackedVector2Array([left + Vector2(0.0, -48.0), right + Vector2(0.0, -48.0), right + Vector2(20.0, -18.0), left + Vector2(-20.0, -18.0)])
+		draw_colored_polygon(awning_poly, awning)
+		draw_line(left + Vector2(0.0, -48.0), right + Vector2(0.0, -48.0), trim, 3.0)
+		for stripe in range(1, 5):
+			var stripe_t := float(stripe) / 5.0
+			var stripe_top := (left + Vector2(0.0, -48.0)).lerp(right + Vector2(0.0, -48.0), stripe_t)
+			var stripe_bottom := (left + Vector2(-20.0, -18.0)).lerp(right + Vector2(20.0, -18.0), stripe_t)
+			draw_line(stripe_top, stripe_bottom, awning.lightened(0.20), 1.5)
+
+	if bool(profile.get("sign", false)):
+		var sign_anchor := facade_bottom_left.lerp(facade_bottom_right, 0.22) + Vector2(-18.0, -86.0)
+		draw_line(sign_anchor + Vector2(0.0, -24.0), sign_anchor, trim, 2.0)
+		_draw_screen_rect(sign_anchor + Vector2(0.0, 12.0), Vector2(34.0, 28.0), Color(0.16, 0.12, 0.08))
+		draw_arc(sign_anchor + Vector2(0.0, 12.0), 11.0, 0.0, TAU, 20, trim, 2.0)
+
+	for banner in range(int(profile.get("banner_count", 1))):
+		var banner_t := (float(banner) + 1.0) / (float(profile.get("banner_count", 1)) + 1.0)
+		var banner_top := facade_top_left.lerp(facade_top_right, banner_t).lerp(facade_bottom_left.lerp(facade_bottom_right, banner_t), 0.36)
+		_draw_banner(banner_top, trim)
+
+	for spire in range(int(profile.get("spires", 3))):
+		var spire_t := 0.08 + (0.84 * float(spire) / maxf(1.0, float(profile.get("spires", 3) - 1)))
+		var base := (corners[0] + lift).lerp(corners[1] + lift, spire_t)
+		_draw_spire(base, trim)
+
+	for dormer in range(int(profile.get("dormers", 0))):
+		var dormer_t := (float(dormer) + 1.0) / (float(profile.get("dormers", 0)) + 1.0)
+		var dormer_base := (corners[0] + lift).lerp(corners[1] + lift, dormer_t) + Vector2(0.0, 16.0)
+		_draw_dormer(dormer_base, body_color.lightened(0.12), roof_color)
+
+	if bool(profile.get("tower", false)):
+		var tower_origin := origin + Vector2i(maxi(0, footprint.x - 1), 0)
+		_draw_isometric_block_model(tower_origin, Vector2i(1, 1), height_tiles + 1.4, elevation_tiles, body_color.lightened(0.08))
+		_draw_spire(_grid_to_world(tower_origin) + Vector2(0.0, -(height_tiles + 1.55) * TILE_SIZE.y), trim)
+
+	if bool(profile.get("arcade", false)):
+		for arch in range(maxi(3, footprint.x)):
+			var t := (float(arch) + 0.5) / float(maxi(3, footprint.x))
+			var arch_base := facade_bottom_left.lerp(facade_bottom_right, t)
+			draw_arc(arch_base + Vector2(0.0, -28.0), 18.0, PI, TAU, 18, body_color.lightened(0.20), 3.0)
+
+
+func _draw_screen_rect(center: Vector2, size: Vector2, color: Color) -> void:
+	var half := size * 0.5
+	draw_colored_polygon(PackedVector2Array([
+		center + Vector2(-half.x, -half.y),
+		center + Vector2(half.x, -half.y),
+		center + Vector2(half.x, half.y),
+		center + Vector2(-half.x, half.y)
+	]), color)
+
+
+func _draw_banner(top_center: Vector2, trim_color: Color) -> void:
+	var banner_color := Color(0.10, 0.22, 0.52)
+	var banner := PackedVector2Array([
+		top_center + Vector2(-13.0, 0.0),
+		top_center + Vector2(13.0, 0.0),
+		top_center + Vector2(13.0, 48.0),
+		top_center + Vector2(0.0, 62.0),
+		top_center + Vector2(-13.0, 48.0)
+	])
+	draw_colored_polygon(banner, banner_color)
+	draw_polyline(banner, trim_color, 2.0, true)
+	draw_line(top_center + Vector2(-8.0, 18.0), top_center + Vector2(8.0, 18.0), trim_color, 2.0)
+
+
+func _draw_spire(base: Vector2, trim_color: Color) -> void:
+	draw_colored_polygon(PackedVector2Array([
+		base + Vector2(-9.0, 0.0),
+		base + Vector2(9.0, 0.0),
+		base + Vector2(0.0, -36.0)
+	]), trim_color)
+	draw_line(base + Vector2(0.0, -36.0), base + Vector2(0.0, -48.0), trim_color.lightened(0.18), 2.0)
+
+
+func _draw_dormer(base: Vector2, body_color: Color, roof_color: Color) -> void:
+	_draw_screen_rect(base + Vector2(0.0, 5.0), Vector2(30.0, 26.0), body_color)
+	draw_colored_polygon(PackedVector2Array([
+		base + Vector2(-20.0, -7.0),
+		base + Vector2(20.0, -7.0),
+		base + Vector2(0.0, -30.0)
+	]), roof_color)
+	_draw_screen_rect(base + Vector2(0.0, 8.0), Vector2(10.0, 15.0), Color(0.13, 0.31, 0.43))
 
 
 func _draw_repeated_block_model(origin: Vector2i, footprint: Vector2i, height_tiles: float, elevation_tiles: float, color: Color) -> void:

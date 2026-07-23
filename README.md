@@ -81,7 +81,7 @@ Editor launch:
 5. Place buildings, tents, route exits, spawns, banners, and combat areas as objects.
 6. Press `S` in the builder to save back to `balen/maps/crossroads_plaza.json`.
 
-The runtime scene `balen/scenes/testbeds/bootstrap_graybox.tscn` loads this JSON directly. Roads, sidewalks, and paths define walkable cells; buildings and wall-like structures block movement through their placed footprints.
+The runtime scene `balen/scenes/testbeds/bootstrap_graybox.tscn` loads this JSON directly. Roads, sidewalks, and paths define walkable cells; buildings and wall-like structures block movement through their placed footprints. Building presets now use Aethelgard-specific rendered structure previews, so their in-builder scale and silhouette should match the playable testbed.
 
 Map builder controls:
 
@@ -89,7 +89,7 @@ Map builder controls:
 - `B` / `L` / `E` / `R`: brush, line, ellipse, ring.
 - `G`: regenerate two-tile sidewalk outlines around painted roads.
 - `O`: toggle object placement.
-- `Tab`: cycle object preset.
+- `Tab`: cycle object presets, including Aethelgard merchant house, tavern, curio shop, guildhall, and arcade row structures.
 - Left mouse: paint terrain or place selected object.
 - In object mode, left click an existing object to select it.
 - Right mouse: erase terrain or remove object.

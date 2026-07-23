@@ -945,10 +945,11 @@ func _add_grand_city_backdrop() -> void:
 		var height: float = facade.height
 		var color: Color = facade.color
 		var roof_color: Color = facade.roof
-		_add_plaza_building(str(facade.name), grid_position, footprint, height, color, roof_color)
+		var asset_id := _fallback_asset_id_for_building_name(str(facade.name))
+		_add_plaza_building(str(facade.name), grid_position, footprint, height, color, roof_color, 0.0, asset_id)
 
 	for grid_position in [Vector2i(-11, -18), Vector2i(-7, -19), Vector2i(7, -19), Vector2i(11, -18), Vector2i(-12, 18), Vector2i(12, 18)]:
-		_add_plaza_building("Blue roof civic tower %s" % str(grid_position), grid_position, Vector2i(2, 2), 5.4, Color(0.70, 0.66, 0.56), Color(0.12, 0.29, 0.48))
+		_add_plaza_building("Blue roof civic tower %s" % str(grid_position), grid_position, Vector2i(2, 2), 5.4, Color(0.70, 0.66, 0.56), Color(0.12, 0.29, 0.48), 0.0, "building.aethelgard_curio_shop")
 
 
 func _add_plaza_frontage_architecture() -> void:
@@ -965,8 +966,8 @@ func _add_plaza_frontage_architecture() -> void:
 		var body_color: Color = building.body
 		var roof_color: Color = building.roof
 		var awning_color: Color = building.awning
-		_add_plaza_building(str(building.name), grid_position, footprint, height, body_color, roof_color)
-		_add_frontage_awning("%s Awning" % str(building.name), grid_position + Vector2i(0, footprint.y - 1), Vector2i(footprint.x, 1), awning_color)
+		var asset_id := _fallback_asset_id_for_building_name(str(building.name))
+		_add_plaza_building(str(building.name), grid_position, footprint, height, body_color, roof_color, 0.0, asset_id, awning_color)
 
 	for grid_position in [
 		Vector2i(-11, -8), Vector2i(-11, -4), Vector2i(-11, 0), Vector2i(-11, 13), Vector2i(-11, 17),
@@ -990,14 +991,13 @@ func _add_authored_buildings() -> void:
 		var roof_color: Color = building.get("roof", Color(0.16, 0.31, 0.46))
 		var awning_color: Color = building.get("awning", Color.TRANSPARENT)
 		var building_name := str(building.get("name", "Authored Building"))
+		var asset_id := str(building.get("asset_id", "building.aethelgard_merchant_house"))
 		var render_style := int(building.get("render_style", AUTHORING_RENDER_BUILDING_MASS))
 		var elevation := float(building.get("elevation", 0.0))
 		if render_style == AUTHORING_RENDER_MODULAR_BLOCK:
 			_add_repeated_isometric_blocks(building_name, grid_position, footprint, height, body_color, elevation)
 		else:
-			_add_plaza_building(building_name, grid_position, footprint, height, body_color, roof_color, elevation)
-		if awning_color.a > 0.0:
-			_add_frontage_awning("%s Awning" % building_name, grid_position + Vector2i(0, footprint.y - 1), Vector2i(footprint.x, 1), awning_color, elevation)
+			_add_plaza_building(building_name, grid_position, footprint, height, body_color, roof_color, elevation, asset_id, awning_color)
 
 
 func _add_market_tents() -> void:
@@ -1098,7 +1098,7 @@ func _add_evidence_marker() -> void:
 	_world_root.add_child(tag)
 
 
-func _add_plaza_building(node_name: String, origin: Vector2i, footprint: Vector2i, height_tiles: float, body_color: Color, roof_color: Color, elevation_tiles := 0.0) -> void:
+func _add_plaza_building(node_name: String, origin: Vector2i, footprint: Vector2i, height_tiles: float, body_color: Color, roof_color: Color, elevation_tiles := 0.0, asset_id := "building.aethelgard_merchant_house", awning_color := Color.TRANSPARENT) -> void:
 	_add_isometric_block("%s Body" % node_name, origin, footprint, height_tiles, body_color, elevation_tiles)
 
 	var tier_offset: int = maxi(1, int(floor(float(footprint.y) / 3.0)))
@@ -1106,6 +1106,176 @@ func _add_plaza_building(node_name: String, origin: Vector2i, footprint: Vector2
 	var upper_footprint := Vector2i(footprint.x, maxi(1, footprint.y - tier_offset))
 	_add_isometric_block("%s Upper Mass" % node_name, upper_origin, upper_footprint, height_tiles + 0.8, body_color.lightened(0.05), elevation_tiles)
 	_add_roof_cap("%s Roof Cap" % node_name, upper_origin, upper_footprint, height_tiles + 1.05, roof_color, elevation_tiles)
+	_add_architecture_details(node_name, origin, footprint, height_tiles, elevation_tiles, body_color, roof_color, awning_color, asset_id)
+
+
+func _fallback_asset_id_for_building_name(building_name: String) -> String:
+	var lower_name := building_name.to_lower()
+	if lower_name.contains("guild") or lower_name.contains("civic"):
+		return "building.aethelgard_guildhall"
+	if lower_name.contains("arcade") or lower_name.contains("row"):
+		return "building.aethelgard_arcade_row"
+	if lower_name.contains("tower") or lower_name.contains("curio") or lower_name.contains("dome"):
+		return "building.aethelgard_curio_shop"
+	if lower_name.contains("ringmarket") or lower_name.contains("stein"):
+		return "building.aethelgard_tavern"
+	return "building.aethelgard_merchant_house"
+
+
+func _architecture_profile(asset_id: String) -> Dictionary:
+	match asset_id:
+		"building.aethelgard_tavern", "building.guild_front":
+			return {"windows": 5, "rows": 2, "spires": 3, "banner_count": 2, "shopfront": true, "sign": true, "dormers": 1, "tower": false, "arcade": false}
+		"building.aethelgard_curio_shop":
+			return {"windows": 4, "rows": 3, "spires": 5, "banner_count": 1, "shopfront": true, "sign": true, "dormers": 2, "tower": true, "arcade": false}
+		"building.aethelgard_guildhall", "building.civic_facade_blue":
+			return {"windows": 6, "rows": 3, "spires": 7, "banner_count": 3, "shopfront": false, "sign": false, "dormers": 2, "tower": true, "arcade": false}
+		"building.aethelgard_arcade_row", "building.arcade_row":
+			return {"windows": 7, "rows": 1, "spires": 4, "banner_count": 2, "shopfront": true, "sign": false, "dormers": 0, "tower": false, "arcade": true}
+		_:
+			return {"windows": 4, "rows": 2, "spires": 4, "banner_count": 1, "shopfront": true, "sign": false, "dormers": 1, "tower": false, "arcade": false}
+
+
+func _add_architecture_details(node_name: String, origin: Vector2i, footprint: Vector2i, height_tiles: float, elevation_tiles: float, body_color: Color, roof_color: Color, awning_color: Color, asset_id: String) -> void:
+	var profile := _architecture_profile(asset_id)
+	var elevation_lift := Vector2(0.0, -elevation_tiles * TILE_SIZE.y)
+	var corners := [
+		_iso(origin) + elevation_lift,
+		_iso(origin + Vector2i(footprint.x, 0)) + elevation_lift,
+		_iso(origin + footprint) + elevation_lift,
+		_iso(origin + Vector2i(0, footprint.y)) + elevation_lift
+	]
+	var lift := Vector2(0.0, -height_tiles * TILE_SIZE.y)
+	var facade_top_left: Vector2 = corners[3] + lift
+	var facade_top_right: Vector2 = corners[2] + lift
+	var facade_bottom_left: Vector2 = corners[3]
+	var facade_bottom_right: Vector2 = corners[2]
+	var z := _depth_z(_iso(origin + footprint), DEPTH_RIDGE_FACE + 8)
+	var trim := Color(0.91, 0.69, 0.28)
+	var glass := Color(0.12, 0.30, 0.42)
+
+	_add_polyline("%s Front Gold Cornice" % node_name, PackedVector2Array([facade_top_left, facade_top_right]), trim, 4.0, z)
+	_add_polyline("%s Roof Gold Edge A" % node_name, PackedVector2Array([corners[0] + lift, corners[1] + lift]), trim.darkened(0.10), 3.0, z)
+	_add_polyline("%s Roof Gold Edge B" % node_name, PackedVector2Array([corners[1] + lift, corners[2] + lift]), trim.darkened(0.06), 3.0, z)
+
+	var column_count: int = maxi(2, int(profile.get("windows", 4)))
+	for index in range(column_count):
+		var t := (float(index) + 0.5) / float(column_count)
+		var top_point := facade_top_left.lerp(facade_top_right, t)
+		var bottom_point := facade_bottom_left.lerp(facade_bottom_right, t)
+		if index % 2 == 0:
+			_add_polyline("%s Facade Pier %d" % [node_name, index], PackedVector2Array([top_point, bottom_point]), body_color.lightened(0.16), 2.0, z)
+		for row in range(int(profile.get("rows", 2))):
+			var row_t := (float(row) + 1.0) / (float(profile.get("rows", 2)) + 1.45)
+			var window_center := top_point.lerp(bottom_point, row_t)
+			_add_screen_rect("%s Window Shadow %d,%d" % [node_name, index, row], window_center + Vector2(0.0, -6.0), Vector2(20.0, 28.0), Color(0.05, 0.06, 0.06, 0.42), z)
+			_add_screen_rect("%s Window Glass %d,%d" % [node_name, index, row], window_center + Vector2(0.0, -8.0), Vector2(14.0, 22.0), glass.lightened(0.18 if row % 2 == 0 else 0.02), z + 1)
+
+	var door_center := facade_top_left.lerp(facade_top_right, 0.5).lerp(facade_bottom_left.lerp(facade_bottom_right, 0.5), 0.82)
+	_add_screen_rect("%s Arched Door" % node_name, door_center + Vector2(0.0, -24.0), Vector2(36.0, 58.0), Color(0.18, 0.12, 0.08), z + 1)
+	_add_polyline("%s Door Gold Arch" % node_name, _arc_points(door_center + Vector2(0.0, -54.0), 21.0, PI, TAU, 20), trim, 3.0, z + 2)
+
+	if awning_color.a > 0.0 or bool(profile.get("shopfront", false)):
+		var awning := awning_color if awning_color.a > 0.0 else Color(0.12, 0.26, 0.52)
+		var left := facade_bottom_left.lerp(facade_bottom_right, 0.18)
+		var right := facade_bottom_left.lerp(facade_bottom_right, 0.82)
+		var awning_poly := PackedVector2Array([left + Vector2(0.0, -48.0), right + Vector2(0.0, -48.0), right + Vector2(20.0, -18.0), left + Vector2(-20.0, -18.0)])
+		_add_polygon("%s Painted Awning" % node_name, awning_poly, awning, z + 3)
+		_add_polyline("%s Awning Gold Rail" % node_name, PackedVector2Array([left + Vector2(0.0, -48.0), right + Vector2(0.0, -48.0)]), trim, 3.0, z + 4)
+
+	if bool(profile.get("sign", false)):
+		var sign_anchor := facade_bottom_left.lerp(facade_bottom_right, 0.22) + Vector2(-18.0, -86.0)
+		_add_polyline("%s Hanging Sign Chain" % node_name, PackedVector2Array([sign_anchor + Vector2(0.0, -24.0), sign_anchor]), trim, 2.0, z + 5)
+		_add_screen_rect("%s Hanging Sign" % node_name, sign_anchor + Vector2(0.0, 12.0), Vector2(34.0, 28.0), Color(0.16, 0.12, 0.08), z + 5)
+		_add_polyline("%s Hanging Sign Ring" % node_name, _arc_points(sign_anchor + Vector2(0.0, 12.0), 11.0, 0.0, TAU, 20), trim, 2.0, z + 6, true)
+
+	for banner in range(int(profile.get("banner_count", 1))):
+		var banner_t := (float(banner) + 1.0) / (float(profile.get("banner_count", 1)) + 1.0)
+		var banner_top := facade_top_left.lerp(facade_top_right, banner_t).lerp(facade_bottom_left.lerp(facade_bottom_right, banner_t), 0.36)
+		_add_banner("%s Banner %d" % [node_name, banner], banner_top, trim, z + 5)
+
+	for spire in range(int(profile.get("spires", 3))):
+		var spire_t := 0.08 + (0.84 * float(spire) / maxf(1.0, float(int(profile.get("spires", 3)) - 1)))
+		var base := (corners[0] + lift).lerp(corners[1] + lift, spire_t)
+		_add_spire("%s Gold Spire %d" % [node_name, spire], base, trim, z + 7)
+
+	for dormer in range(int(profile.get("dormers", 0))):
+		var dormer_t := (float(dormer) + 1.0) / (float(profile.get("dormers", 0)) + 1.0)
+		var dormer_base := (corners[0] + lift).lerp(corners[1] + lift, dormer_t) + Vector2(0.0, 16.0)
+		_add_dormer("%s Dormer %d" % [node_name, dormer], dormer_base, body_color.lightened(0.12), roof_color, z + 6)
+
+	if bool(profile.get("tower", false)):
+		var tower_origin := origin + Vector2i(maxi(0, footprint.x - 1), 0)
+		_add_isometric_block("%s Corner Tower" % node_name, tower_origin, Vector2i(1, 1), height_tiles + 1.4, body_color.lightened(0.08), elevation_tiles)
+		_add_spire("%s Tower Spire" % node_name, _iso(tower_origin) + elevation_lift + Vector2(0.0, -(height_tiles + 1.55) * TILE_SIZE.y), trim, z + 10)
+
+	if bool(profile.get("arcade", false)):
+		for arch in range(maxi(3, footprint.x)):
+			var t := (float(arch) + 0.5) / float(maxi(3, footprint.x))
+			var arch_base := facade_bottom_left.lerp(facade_bottom_right, t)
+			_add_polyline("%s Arcade Arch %d" % [node_name, arch], _arc_points(arch_base + Vector2(0.0, -28.0), 18.0, PI, TAU, 18), body_color.lightened(0.20), 3.0, z + 6)
+
+
+func _add_polyline(node_name: String, points: PackedVector2Array, color: Color, width: float, z: int, closed := false) -> void:
+	var line := Line2D.new()
+	line.name = node_name
+	line.points = points
+	line.default_color = color
+	line.width = width
+	line.closed = closed
+	line.z_index = z
+	_world_root.add_child(line)
+
+
+func _add_screen_rect(node_name: String, center: Vector2, size: Vector2, color: Color, z: int) -> void:
+	var half := size * 0.5
+	_add_polygon(node_name, PackedVector2Array([
+		center + Vector2(-half.x, -half.y),
+		center + Vector2(half.x, -half.y),
+		center + Vector2(half.x, half.y),
+		center + Vector2(-half.x, half.y)
+	]), color, z)
+
+
+func _arc_points(center: Vector2, radius: float, start_angle: float, end_angle: float, count: int) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	for index in range(count):
+		var t := float(index) / float(maxi(1, count - 1))
+		var angle := lerpf(start_angle, end_angle, t)
+		points.append(center + Vector2(cos(angle) * radius, sin(angle) * radius))
+	return points
+
+
+func _add_banner(node_name: String, top_center: Vector2, trim_color: Color, z: int) -> void:
+	var banner := PackedVector2Array([
+		top_center + Vector2(-13.0, 0.0),
+		top_center + Vector2(13.0, 0.0),
+		top_center + Vector2(13.0, 48.0),
+		top_center + Vector2(0.0, 62.0),
+		top_center + Vector2(-13.0, 48.0)
+	])
+	_add_polygon(node_name, banner, Color(0.10, 0.22, 0.52), z)
+	_add_polyline("%s Gold Border" % node_name, banner, trim_color, 2.0, z + 1, true)
+	_add_polyline("%s Gold Sigil" % node_name, PackedVector2Array([top_center + Vector2(-8.0, 18.0), top_center + Vector2(8.0, 18.0)]), trim_color, 2.0, z + 2)
+
+
+func _add_spire(node_name: String, base: Vector2, trim_color: Color, z: int) -> void:
+	_add_polygon(node_name, PackedVector2Array([
+		base + Vector2(-9.0, 0.0),
+		base + Vector2(9.0, 0.0),
+		base + Vector2(0.0, -36.0)
+	]), trim_color, z)
+	_add_polyline("%s Needle" % node_name, PackedVector2Array([base + Vector2(0.0, -36.0), base + Vector2(0.0, -48.0)]), trim_color.lightened(0.18), 2.0, z + 1)
+
+
+func _add_dormer(node_name: String, base: Vector2, body_color: Color, roof_color: Color, z: int) -> void:
+	_add_screen_rect("%s Stone Face" % node_name, base + Vector2(0.0, 5.0), Vector2(30.0, 26.0), body_color, z)
+	_add_polygon("%s Roof" % node_name, PackedVector2Array([
+		base + Vector2(-20.0, -7.0),
+		base + Vector2(20.0, -7.0),
+		base + Vector2(0.0, -30.0)
+	]), roof_color, z + 1)
+	_add_screen_rect("%s Window" % node_name, base + Vector2(0.0, 8.0), Vector2(10.0, 15.0), Color(0.13, 0.31, 0.43), z + 2)
 
 
 func _add_frontage_awning(node_name: String, origin: Vector2i, footprint: Vector2i, color: Color, elevation_tiles := 0.0) -> void:
