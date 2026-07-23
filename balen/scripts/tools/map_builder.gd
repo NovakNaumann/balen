@@ -3,6 +3,8 @@ extends Node2D
 const MAP_DATA := preload("res://scripts/map/map_data.gd")
 const MAP_PATH := "res://maps/crossroads_plaza.json"
 const TILE_SIZE := Vector2(112.0, 56.0)
+const ELEVATION_STEP := 0.25
+const HEIGHT_STEP := 0.25
 
 const TERRAIN_OPTIONS := [
 	MAP_DATA.TERRAIN_ROAD,
@@ -30,6 +32,8 @@ var _placements: Array[Dictionary] = []
 var _selected_terrain_index := 0
 var _selected_shape_index := 0
 var _selected_object_index := 0
+var _selected_placement_index := -1
+var _default_elevation := 0.0
 var _object_mode := false
 var _is_dragging := false
 var _is_panning := false
@@ -50,7 +54,7 @@ func _ready() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
-		_handle_key(event.keycode)
+		_handle_key(event)
 	elif event is InputEventMouseButton:
 		_handle_mouse_button(event)
 	elif event is InputEventMouseMotion:
@@ -59,6 +63,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _draw() -> void:
 	_draw_grid()
+	_draw_bounds_frame()
 	_draw_terrain()
 	_draw_placements()
 	_draw_cursor_preview()
@@ -104,6 +109,7 @@ func _normalize_placement(raw_placement: Dictionary) -> Dictionary:
 		"grid": MAP_DATA.grid_from_array(raw_placement.get("grid", []), Vector2i.ZERO),
 		"footprint": MAP_DATA.grid_from_array(raw_placement.get("footprint", []), Vector2i.ONE),
 		"height": float(raw_placement.get("height", 1.0)),
+		"elevation": float(raw_placement.get("elevation", 0.0)),
 		"color": MAP_DATA.color_from_array(raw_placement.get("color", []), fallback_color),
 		"roof_color": MAP_DATA.color_from_array(raw_placement.get("roof_color", []), Color(0.16, 0.31, 0.46)),
 		"awning_color": MAP_DATA.color_from_array(raw_placement.get("awning_color", []), Color.TRANSPARENT),
@@ -131,18 +137,66 @@ func _build_ui() -> void:
 	var panel := PanelContainer.new()
 	panel.anchor_left = 0.015
 	panel.anchor_top = 0.015
-	panel.anchor_right = 0.42
-	panel.anchor_bottom = 0.18
+	panel.anchor_right = 0.50
+	panel.anchor_bottom = 0.30
 	layer.add_child(panel)
+
+	var stack := VBoxContainer.new()
+	stack.add_theme_constant_override("separation", 6)
+	panel.add_child(stack)
 
 	_status_label = Label.new()
 	_status_label.add_theme_font_size_override("font_size", 16)
-	panel.add_child(_status_label)
+	stack.add_child(_status_label)
+
+	var bounds_label := Label.new()
+	bounds_label.text = "Map Boundary"
+	bounds_label.add_theme_font_size_override("font_size", 14)
+	stack.add_child(bounds_label)
+
+	var bounds_row := HBoxContainer.new()
+	bounds_row.add_theme_constant_override("separation", 4)
+	stack.add_child(bounds_row)
+	_add_button(bounds_row, "All -", _resize_all_bounds.bind(-1))
+	_add_button(bounds_row, "All +", _resize_all_bounds.bind(1))
+	_add_button(bounds_row, "W In", _resize_bound.bind("west", -1))
+	_add_button(bounds_row, "W Out", _resize_bound.bind("west", 1))
+	_add_button(bounds_row, "E In", _resize_bound.bind("east", -1))
+	_add_button(bounds_row, "E Out", _resize_bound.bind("east", 1))
+	_add_button(bounds_row, "N In", _resize_bound.bind("north", -1))
+	_add_button(bounds_row, "N Out", _resize_bound.bind("north", 1))
+	_add_button(bounds_row, "S In", _resize_bound.bind("south", -1))
+	_add_button(bounds_row, "S Out", _resize_bound.bind("south", 1))
+
+	var object_label := Label.new()
+	object_label.text = "Selected Object"
+	object_label.add_theme_font_size_override("font_size", 14)
+	stack.add_child(object_label)
+
+	var object_row := HBoxContainer.new()
+	object_row.add_theme_constant_override("separation", 4)
+	stack.add_child(object_row)
+	_add_button(object_row, "Elev -", _adjust_selected_elevation.bind(-ELEVATION_STEP))
+	_add_button(object_row, "Elev +", _adjust_selected_elevation.bind(ELEVATION_STEP))
+	_add_button(object_row, "Height -", _adjust_selected_height.bind(-HEIGHT_STEP))
+	_add_button(object_row, "Height +", _adjust_selected_height.bind(HEIGHT_STEP))
 	_refresh_status()
 
 
-func _handle_key(keycode: int) -> void:
-	match keycode:
+func _add_button(parent: Control, text: String, callback: Callable) -> void:
+	var button := Button.new()
+	button.text = text
+	button.focus_mode = Control.FOCUS_NONE
+	button.pressed.connect(callback)
+	parent.add_child(button)
+
+
+func _handle_key(event: InputEventKey) -> void:
+	if event.alt_pressed:
+		_handle_boundary_hotkey(event)
+		return
+
+	match event.keycode:
 		KEY_1:
 			_select_terrain(0)
 		KEY_2:
@@ -174,6 +228,31 @@ func _handle_key(keycode: int) -> void:
 		KEY_F5:
 			_load_map()
 			_status_message = "Reloaded"
+		KEY_PAGEUP:
+			_adjust_selected_elevation(ELEVATION_STEP)
+		KEY_PAGEDOWN:
+			_adjust_selected_elevation(-ELEVATION_STEP)
+		KEY_PERIOD:
+			_adjust_selected_height(HEIGHT_STEP)
+		KEY_COMMA:
+			_adjust_selected_height(-HEIGHT_STEP)
+	_refresh_status()
+	queue_redraw()
+
+
+func _handle_boundary_hotkey(event: InputEventKey) -> void:
+	var delta := -1 if event.shift_pressed else 1
+	match event.keycode:
+		KEY_LEFT:
+			_resize_bound("west", delta)
+		KEY_RIGHT:
+			_resize_bound("east", delta)
+		KEY_UP:
+			_resize_bound("north", delta)
+		KEY_DOWN:
+			_resize_bound("south", delta)
+		_:
+			return
 	_refresh_status()
 	queue_redraw()
 
@@ -192,6 +271,69 @@ func _select_shape(shape_name: String) -> void:
 		_status_message = "Selected shape: %s" % shape_name
 
 
+func _resize_all_bounds(delta: int) -> void:
+	_bounds["min_x"] = int(_bounds["min_x"]) - delta
+	_bounds["max_x"] = int(_bounds["max_x"]) + delta
+	_bounds["min_y"] = int(_bounds["min_y"]) - delta
+	_bounds["max_y"] = int(_bounds["max_y"]) + delta
+	_sanitize_bounds()
+	_status_message = "Map boundary resized to %s" % _bounds_text()
+	_refresh_status()
+	queue_redraw()
+
+
+func _resize_bound(side: String, direction: int) -> void:
+	match side:
+		"west":
+			_bounds["min_x"] = int(_bounds["min_x"]) - direction
+		"east":
+			_bounds["max_x"] = int(_bounds["max_x"]) + direction
+		"north":
+			_bounds["min_y"] = int(_bounds["min_y"]) - direction
+		"south":
+			_bounds["max_y"] = int(_bounds["max_y"]) + direction
+	_sanitize_bounds()
+	_status_message = "%s boundary resized to %s" % [side.capitalize(), _bounds_text()]
+	_refresh_status()
+	queue_redraw()
+
+
+func _sanitize_bounds() -> void:
+	if int(_bounds["min_x"]) > int(_bounds["max_x"]) - 2:
+		_bounds["min_x"] = int(_bounds["max_x"]) - 2
+	if int(_bounds["min_y"]) > int(_bounds["max_y"]) - 2:
+		_bounds["min_y"] = int(_bounds["max_y"]) - 2
+
+
+func _bounds_text() -> String:
+	return "x %d..%d, y %d..%d" % [int(_bounds["min_x"]), int(_bounds["max_x"]), int(_bounds["min_y"]), int(_bounds["max_y"])]
+
+
+func _adjust_selected_elevation(delta: float) -> void:
+	if _selected_placement_index >= 0 and _selected_placement_index < _placements.size():
+		var placement := _placements[_selected_placement_index]
+		placement["elevation"] = maxf(0.0, float(placement.get("elevation", 0.0)) + delta)
+		_status_message = "%s elevation: %.2f" % [str(placement.get("name", "Object")), float(placement["elevation"])]
+	else:
+		_default_elevation = maxf(0.0, _default_elevation + delta)
+		_status_message = "Default object elevation: %.2f" % _default_elevation
+	_refresh_status()
+	queue_redraw()
+
+
+func _adjust_selected_height(delta: float) -> void:
+	if _selected_placement_index < 0 or _selected_placement_index >= _placements.size():
+		_status_message = "Select an object before changing height"
+		_refresh_status()
+		return
+
+	var placement := _placements[_selected_placement_index]
+	placement["height"] = maxf(0.0, float(placement.get("height", 1.0)) + delta)
+	_status_message = "%s height: %.2f" % [str(placement.get("name", "Object")), float(placement["height"])]
+	_refresh_status()
+	queue_redraw()
+
+
 func _handle_mouse_button(event: InputEventMouseButton) -> void:
 	if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
 		_camera.zoom *= 0.9
@@ -206,7 +348,12 @@ func _handle_mouse_button(event: InputEventMouseButton) -> void:
 			_drag_current_grid = _drag_start_grid
 			_is_dragging = true
 			if _object_mode:
-				_place_object(_drag_start_grid)
+				var placement_index := _find_placement_index_at(_drag_start_grid)
+				if placement_index >= 0:
+					_selected_placement_index = placement_index
+					_status_message = "Selected %s" % str(_placements[_selected_placement_index].get("name", "Object"))
+				else:
+					_place_object(_drag_start_grid)
 				_is_dragging = false
 			elif _selected_shape() == "brush":
 				_paint_brush(_drag_start_grid)
@@ -335,6 +482,7 @@ func _place_object(grid_position: Vector2i) -> void:
 		"grid": grid_position,
 		"footprint": preset["footprint"],
 		"height": float(preset["height"]),
+		"elevation": _default_elevation,
 		"color": preset["color"],
 		"roof_color": preset.get("roof_color", Color(0.16, 0.31, 0.46)),
 		"awning_color": preset.get("awning_color", Color.TRANSPARENT),
@@ -343,6 +491,7 @@ func _place_object(grid_position: Vector2i) -> void:
 	if int(preset["kind"]) == 6:
 		placement["actor_id"] = "debug.spawn_%03d" % (_placements.size() + 1)
 	_placements.append(placement)
+	_selected_placement_index = _placements.size() - 1
 	_status_message = "Placed %s at %s" % [preset["name"], str(grid_position)]
 
 
@@ -351,9 +500,21 @@ func _remove_object_at(grid_position: Vector2i) -> void:
 		var placement := _placements[index]
 		if _grid_in_footprint(grid_position, placement["grid"], placement["footprint"]):
 			_placements.remove_at(index)
+			if _selected_placement_index == index:
+				_selected_placement_index = -1
+			elif _selected_placement_index > index:
+				_selected_placement_index -= 1
 			_status_message = "Removed object at %s" % str(grid_position)
 			return
 	_status_message = "No object at %s" % str(grid_position)
+
+
+func _find_placement_index_at(grid_position: Vector2i) -> int:
+	for index in range(_placements.size() - 1, -1, -1):
+		var placement := _placements[index]
+		if _grid_in_footprint(grid_position, placement["grid"], placement["footprint"]):
+			return index
+	return -1
 
 
 func _save_map() -> void:
@@ -375,6 +536,7 @@ func _save_map() -> void:
 			"grid": [placement["grid"].x, placement["grid"].y],
 			"footprint": [placement["footprint"].x, placement["footprint"].y],
 			"height": float(placement["height"]),
+			"elevation": float(placement.get("elevation", 0.0)),
 			"color": MAP_DATA.color_to_array(placement["color"]),
 			"blocks_movement": bool(placement["blocks_movement"])
 		}
@@ -387,6 +549,12 @@ func _save_map() -> void:
 		placement_entries.append(entry)
 
 	var saved_map := _map_data.duplicate(true)
+	saved_map["bounds"] = {
+		"min_x": int(_bounds["min_x"]),
+		"max_x": int(_bounds["max_x"]),
+		"min_y": int(_bounds["min_y"]),
+		"max_y": int(_bounds["max_y"])
+	}
 	saved_map["terrain"] = MAP_DATA.sorted_terrain(terrain_entries)
 	saved_map["placements"] = placement_entries
 	if MAP_DATA.save_map(MAP_PATH, saved_map):
@@ -403,6 +571,15 @@ func _draw_grid() -> void:
 			draw_polyline(_diamond(center), Color(0.32, 0.34, 0.33, 0.32), 1.0, true)
 
 
+func _draw_bounds_frame() -> void:
+	var origin := Vector2i(int(_bounds["min_x"]), int(_bounds["min_y"]))
+	var size := Vector2i(int(_bounds["max_x"]) - int(_bounds["min_x"]) + 1, int(_bounds["max_y"]) - int(_bounds["min_y"]) + 1)
+	var polygon := _footprint_polygon(origin, size)
+	draw_polyline(polygon, Color(1.0, 0.78, 0.18, 0.95), 5.0, true)
+	for point in polygon:
+		draw_circle(point, 7.0, Color(1.0, 0.42, 0.18, 0.95))
+
+
 func _draw_terrain() -> void:
 	for key in _terrain_by_key.keys():
 		var grid_position := _grid_from_key(str(key))
@@ -413,12 +590,113 @@ func _draw_terrain() -> void:
 
 
 func _draw_placements() -> void:
-	for placement in _placements:
-		var color: Color = placement["color"]
-		color.a = 0.58
-		var polygon := _footprint_polygon(placement["grid"], placement["footprint"])
-		draw_colored_polygon(polygon, color)
-		draw_polyline(polygon, Color(1.0, 0.26, 0.18, 0.88) if bool(placement["blocks_movement"]) else Color(0.20, 0.72, 1.0, 0.78), 2.0, true)
+	var ordered_placements := _placements.duplicate()
+	ordered_placements.sort_custom(_sort_placements_for_draw)
+	for placement in ordered_placements:
+		_draw_placement_model(placement)
+
+
+func _sort_placements_for_draw(a: Dictionary, b: Dictionary) -> bool:
+	var anchor_a: Vector2 = _grid_to_world(a.get("grid", Vector2i.ZERO) + a.get("footprint", Vector2i.ONE))
+	var anchor_b: Vector2 = _grid_to_world(b.get("grid", Vector2i.ZERO) + b.get("footprint", Vector2i.ONE))
+	return anchor_a.y < anchor_b.y
+
+
+func _draw_placement_model(placement: Dictionary) -> void:
+	var kind := int(placement.get("kind", 3))
+	var origin: Vector2i = placement.get("grid", Vector2i.ZERO)
+	var footprint: Vector2i = placement.get("footprint", Vector2i.ONE)
+	var height := float(placement.get("height", 1.0))
+	var elevation := float(placement.get("elevation", 0.0))
+	var color: Color = placement.get("color", Color(0.70, 0.64, 0.52))
+	var is_selected := _placement_index_for_identity(placement) == _selected_placement_index
+
+	match kind:
+		3:
+			_draw_plaza_building_model(origin, footprint, height, elevation, color, placement.get("roof_color", Color(0.16, 0.31, 0.46)))
+		4:
+			_draw_repeated_block_model(origin, footprint, height, elevation, color)
+		9:
+			var combat_color := color
+			combat_color.a = 0.38
+			draw_colored_polygon(_footprint_polygon(origin, footprint), combat_color)
+		_:
+			_draw_isometric_block_model(origin, footprint, height, elevation, color)
+
+	var outline := _elevated_footprint_polygon(origin, footprint, elevation)
+	draw_polyline(outline, Color(1.0, 0.88, 0.24, 1.0) if is_selected else Color(1.0, 0.26, 0.18, 0.82) if bool(placement.get("blocks_movement", false)) else Color(0.20, 0.72, 1.0, 0.72), 3.0 if is_selected else 2.0, true)
+
+
+func _placement_index_for_identity(target: Dictionary) -> int:
+	for index in range(_placements.size()):
+		if _placements[index] == target:
+			return index
+	return -1
+
+
+func _draw_plaza_building_model(origin: Vector2i, footprint: Vector2i, height_tiles: float, elevation_tiles: float, body_color: Color, roof_color: Color) -> void:
+	_draw_isometric_block_model(origin, footprint, height_tiles, elevation_tiles, body_color)
+	var tier_offset: int = maxi(1, int(floor(float(footprint.y) / 3.0)))
+	var upper_origin := origin + Vector2i(0, tier_offset)
+	var upper_footprint := Vector2i(footprint.x, maxi(1, footprint.y - tier_offset))
+	_draw_isometric_block_model(upper_origin, upper_footprint, height_tiles + 0.8, elevation_tiles, body_color.lightened(0.05))
+	_draw_roof_cap_model(upper_origin, upper_footprint, height_tiles + 1.05, elevation_tiles, roof_color)
+
+
+func _draw_repeated_block_model(origin: Vector2i, footprint: Vector2i, height_tiles: float, elevation_tiles: float, color: Color) -> void:
+	for x in range(footprint.x):
+		for y in range(footprint.y):
+			_draw_isometric_block_model(origin + Vector2i(x, y), Vector2i.ONE, height_tiles, elevation_tiles, color)
+
+
+func _draw_roof_cap_model(origin: Vector2i, footprint: Vector2i, height_tiles: float, elevation_tiles: float, color: Color) -> void:
+	var corners := _elevated_corners(origin, footprint, elevation_tiles)
+	var lift := Vector2(0.0, -height_tiles * TILE_SIZE.y)
+	var roof := PackedVector2Array([corners[0] + lift, corners[1] + lift, corners[2] + lift, corners[3] + lift])
+	var ridge := PackedVector2Array([
+		corners[0] + lift,
+		(corners[1] + corners[2]) * 0.5 + lift + Vector2(0.0, -18.0),
+		corners[2] + lift,
+		(corners[3] + corners[0]) * 0.5 + lift + Vector2(0.0, -18.0)
+	])
+	draw_colored_polygon(roof, color)
+	draw_colored_polygon(ridge, color.lightened(0.10))
+
+
+func _draw_isometric_block_model(origin: Vector2i, footprint: Vector2i, height_tiles: float, elevation_tiles: float, color: Color) -> void:
+	if elevation_tiles > 0.0:
+		_draw_elevation_guides(origin, footprint, elevation_tiles)
+	var corners := _elevated_corners(origin, footprint, elevation_tiles)
+	var lift := Vector2(0.0, -height_tiles * TILE_SIZE.y)
+	var top := PackedVector2Array([corners[0] + lift, corners[1] + lift, corners[2] + lift, corners[3] + lift])
+	var right := PackedVector2Array([corners[1] + lift, corners[2] + lift, corners[2], corners[1]])
+	var left := PackedVector2Array([corners[2] + lift, corners[3] + lift, corners[3], corners[2]])
+	draw_colored_polygon(right, color.darkened(0.18))
+	draw_colored_polygon(left, color.darkened(0.28))
+	draw_colored_polygon(top, color.lightened(0.08))
+
+
+func _draw_elevation_guides(origin: Vector2i, footprint: Vector2i, elevation_tiles: float) -> void:
+	var ground := _footprint_polygon(origin, footprint)
+	var elevated := _elevated_footprint_polygon(origin, footprint, elevation_tiles)
+	draw_polyline(ground, Color(0.0, 0.0, 0.0, 0.26), 2.0, true)
+	for index in range(ground.size()):
+		draw_line(ground[index], elevated[index], Color(1.0, 0.78, 0.22, 0.58), 2.0)
+
+
+func _elevated_corners(origin: Vector2i, footprint: Vector2i, elevation_tiles: float) -> Array[Vector2]:
+	var lift := Vector2(0.0, -elevation_tiles * TILE_SIZE.y)
+	return [
+		_grid_to_world(origin) + lift,
+		_grid_to_world(origin + Vector2i(footprint.x, 0)) + lift,
+		_grid_to_world(origin + footprint) + lift,
+		_grid_to_world(origin + Vector2i(0, footprint.y)) + lift
+	]
+
+
+func _elevated_footprint_polygon(origin: Vector2i, footprint: Vector2i, elevation_tiles: float) -> PackedVector2Array:
+	var corners := _elevated_corners(origin, footprint, elevation_tiles)
+	return PackedVector2Array([corners[0], corners[1], corners[2], corners[3]])
 
 
 func _draw_cursor_preview() -> void:
@@ -438,11 +716,17 @@ func _refresh_status() -> void:
 	if _status_label == null:
 		return
 	var mode := "Objects" if _object_mode else "Terrain"
-	_status_label.text = "Balen Map Builder\nMode: %s | Terrain: %s | Shape: %s | Object: %s\n1-4 terrain, B/L/E/R shapes, O objects, Tab asset, G sidewalks, S save, F5 reload\n%s" % [
+	var selected_text := "none"
+	if _selected_placement_index >= 0 and _selected_placement_index < _placements.size():
+		var placement := _placements[_selected_placement_index]
+		selected_text = "%s | elev %.2f | height %.2f" % [str(placement.get("name", "Object")), float(placement.get("elevation", 0.0)), float(placement.get("height", 0.0))]
+	_status_label.text = "Balen Map Builder\nMode: %s | Terrain: %s | Shape: %s | Object: %s\nBounds: %s | Selected: %s\n1-4 terrain, B/L/E/R shapes, O objects, Tab asset, G sidewalks, S save, F5 reload\nAlt+Arrows resize, PageUp/PageDown elevation, ,/. height\n%s" % [
 		mode,
 		_selected_terrain(),
 		_selected_shape(),
 		OBJECT_PRESETS[_selected_object_index]["name"],
+		_bounds_text(),
+		selected_text,
 		_status_message
 	]
 

@@ -513,6 +513,7 @@ func _map_placement_definition(raw_placement: Dictionary) -> Dictionary:
 		"grid": MAP_DATA.grid_from_array(raw_placement.get("grid", []), Vector2i.ZERO),
 		"footprint": MAP_DATA.grid_from_array(raw_placement.get("footprint", []), Vector2i.ONE),
 		"height": float(raw_placement.get("height", 1.0)),
+		"elevation": float(raw_placement.get("elevation", 0.0)),
 		"color": MAP_DATA.color_from_array(raw_placement.get("color", []), fallback_color),
 		"roof": MAP_DATA.color_from_array(raw_placement.get("roof_color", []), Color(0.16, 0.31, 0.46, 1.0)),
 		"awning": MAP_DATA.color_from_array(raw_placement.get("awning_color", []), Color.TRANSPARENT),
@@ -649,6 +650,7 @@ func _authored_placement_definitions(kind: int) -> Array[Dictionary]:
 			"grid": _authored_grid_position(node),
 			"footprint": node.get("footprint"),
 			"height": node.get("height_tiles"),
+			"elevation": 0.0,
 			"color": node.get("color"),
 			"roof": node.get("roof_color"),
 			"awning": node.get("awning_color"),
@@ -989,12 +991,13 @@ func _add_authored_buildings() -> void:
 		var awning_color: Color = building.get("awning", Color.TRANSPARENT)
 		var building_name := str(building.get("name", "Authored Building"))
 		var render_style := int(building.get("render_style", AUTHORING_RENDER_BUILDING_MASS))
+		var elevation := float(building.get("elevation", 0.0))
 		if render_style == AUTHORING_RENDER_MODULAR_BLOCK:
-			_add_repeated_isometric_blocks(building_name, grid_position, footprint, height, body_color)
+			_add_repeated_isometric_blocks(building_name, grid_position, footprint, height, body_color, elevation)
 		else:
-			_add_plaza_building(building_name, grid_position, footprint, height, body_color, roof_color)
+			_add_plaza_building(building_name, grid_position, footprint, height, body_color, roof_color, elevation)
 		if awning_color.a > 0.0:
-			_add_frontage_awning("%s Awning" % building_name, grid_position + Vector2i(0, footprint.y - 1), Vector2i(footprint.x, 1), awning_color)
+			_add_frontage_awning("%s Awning" % building_name, grid_position + Vector2i(0, footprint.y - 1), Vector2i(footprint.x, 1), awning_color, elevation)
 
 
 func _add_market_tents() -> void:
@@ -1016,12 +1019,13 @@ func _add_market_tents() -> void:
 		var grid_position: Vector2i = tent.get("grid", Vector2i.ZERO)
 		var footprint: Vector2i = tent.get("footprint", Vector2i.ONE)
 		var height := float(tent.get("height", 0.85))
+		var elevation := float(tent.get("elevation", 0.0))
 		var color: Color = tent.get("color", Color(0.35, 0.26, 0.20))
 		var render_style := int(tent.get("render_style", AUTHORING_RENDER_MODULAR_BLOCK))
 		if render_style == AUTHORING_RENDER_BUILDING_MASS:
-			_add_isometric_block(str(tent.get("name", "Market Tent")), grid_position, footprint, height, color)
+			_add_isometric_block(str(tent.get("name", "Market Tent")), grid_position, footprint, height, color, elevation)
 		else:
-			_add_repeated_isometric_blocks(str(tent.get("name", "Market Tent")), grid_position, footprint, height, color)
+			_add_repeated_isometric_blocks(str(tent.get("name", "Market Tent")), grid_position, footprint, height, color, elevation)
 
 
 func _add_civic_banners() -> void:
@@ -1034,7 +1038,7 @@ func _add_civic_banners() -> void:
 	for banner in banners:
 		var grid_position: Vector2i = banner.get("grid", Vector2i.ZERO)
 		var color: Color = banner.get("color", Color(0.12, 0.22, 0.50))
-		_add_isometric_block(str(banner.get("name", "Civic Banner")), grid_position, Vector2i(1, 1), float(banner.get("height", 1.4)), color)
+		_add_isometric_block(str(banner.get("name", "Civic Banner")), grid_position, Vector2i(1, 1), float(banner.get("height", 1.4)), color, float(banner.get("elevation", 0.0)))
 
 
 func _add_route_markers() -> void:
@@ -1094,33 +1098,33 @@ func _add_evidence_marker() -> void:
 	_world_root.add_child(tag)
 
 
-func _add_plaza_building(node_name: String, origin: Vector2i, footprint: Vector2i, height_tiles: float, body_color: Color, roof_color: Color) -> void:
-	_add_isometric_block("%s Body" % node_name, origin, footprint, height_tiles, body_color)
+func _add_plaza_building(node_name: String, origin: Vector2i, footprint: Vector2i, height_tiles: float, body_color: Color, roof_color: Color, elevation_tiles := 0.0) -> void:
+	_add_isometric_block("%s Body" % node_name, origin, footprint, height_tiles, body_color, elevation_tiles)
 
 	var tier_offset: int = maxi(1, int(floor(float(footprint.y) / 3.0)))
 	var upper_origin := origin + Vector2i(0, tier_offset)
 	var upper_footprint := Vector2i(footprint.x, maxi(1, footprint.y - tier_offset))
-	_add_isometric_block("%s Upper Mass" % node_name, upper_origin, upper_footprint, height_tiles + 0.8, body_color.lightened(0.05))
-	_add_roof_cap("%s Roof Cap" % node_name, upper_origin, upper_footprint, height_tiles + 1.05, roof_color)
+	_add_isometric_block("%s Upper Mass" % node_name, upper_origin, upper_footprint, height_tiles + 0.8, body_color.lightened(0.05), elevation_tiles)
+	_add_roof_cap("%s Roof Cap" % node_name, upper_origin, upper_footprint, height_tiles + 1.05, roof_color, elevation_tiles)
 
 
-func _add_frontage_awning(node_name: String, origin: Vector2i, footprint: Vector2i, color: Color) -> void:
-	_add_repeated_isometric_blocks(node_name, origin, footprint, 0.55, color)
+func _add_frontage_awning(node_name: String, origin: Vector2i, footprint: Vector2i, color: Color, elevation_tiles := 0.0) -> void:
+	_add_repeated_isometric_blocks(node_name, origin, footprint, 0.55, color, elevation_tiles)
 
 
-func _add_repeated_isometric_blocks(node_name: String, origin: Vector2i, footprint: Vector2i, height_tiles: float, color: Color) -> void:
+func _add_repeated_isometric_blocks(node_name: String, origin: Vector2i, footprint: Vector2i, height_tiles: float, color: Color, elevation_tiles := 0.0) -> void:
 	for x in range(footprint.x):
 		for y in range(footprint.y):
 			var cell_origin := origin + Vector2i(x, y)
-			_add_isometric_block("%s Module %d,%d" % [node_name, x, y], cell_origin, Vector2i.ONE, height_tiles, color)
+			_add_isometric_block("%s Module %d,%d" % [node_name, x, y], cell_origin, Vector2i.ONE, height_tiles, color, elevation_tiles)
 
 
-func _add_roof_cap(node_name: String, origin: Vector2i, footprint: Vector2i, height_tiles: float, color: Color) -> void:
+func _add_roof_cap(node_name: String, origin: Vector2i, footprint: Vector2i, height_tiles: float, color: Color, elevation_tiles := 0.0) -> void:
 	var corners := [
-		_iso(origin),
-		_iso(origin + Vector2i(footprint.x, 0)),
-		_iso(origin + footprint),
-		_iso(origin + Vector2i(0, footprint.y))
+		_iso(origin) + Vector2(0.0, -elevation_tiles * TILE_SIZE.y),
+		_iso(origin + Vector2i(footprint.x, 0)) + Vector2(0.0, -elevation_tiles * TILE_SIZE.y),
+		_iso(origin + footprint) + Vector2(0.0, -elevation_tiles * TILE_SIZE.y),
+		_iso(origin + Vector2i(0, footprint.y)) + Vector2(0.0, -elevation_tiles * TILE_SIZE.y)
 	]
 	var lift := Vector2(0.0, -height_tiles * TILE_SIZE.y)
 	var roof := PackedVector2Array([
@@ -1135,25 +1139,26 @@ func _add_roof_cap(node_name: String, origin: Vector2i, footprint: Vector2i, hei
 		corners[2] + lift,
 		(corners[3] + corners[0]) * 0.5 + lift + Vector2(0.0, -18.0)
 	])
-	_add_polygon("%s Main" % node_name, roof, color, _depth_z(corners[2], DEPTH_ROOF_FACE))
-	_add_polygon("%s Ridge" % node_name, ridge, color.lightened(0.10), _depth_z(corners[2], DEPTH_RIDGE_FACE))
+	_add_polygon("%s Main" % node_name, roof, color, _depth_z(_iso(origin + footprint), DEPTH_ROOF_FACE))
+	_add_polygon("%s Ridge" % node_name, ridge, color.lightened(0.10), _depth_z(_iso(origin + footprint), DEPTH_RIDGE_FACE))
 
 
-func _add_isometric_block(node_name: String, origin: Vector2i, footprint: Vector2i, height_tiles: float, color: Color) -> void:
+func _add_isometric_block(node_name: String, origin: Vector2i, footprint: Vector2i, height_tiles: float, color: Color, elevation_tiles := 0.0) -> void:
 	var corners := [
-		_iso(origin),
-		_iso(origin + Vector2i(footprint.x, 0)),
-		_iso(origin + footprint),
-		_iso(origin + Vector2i(0, footprint.y))
+		_iso(origin) + Vector2(0.0, -elevation_tiles * TILE_SIZE.y),
+		_iso(origin + Vector2i(footprint.x, 0)) + Vector2(0.0, -elevation_tiles * TILE_SIZE.y),
+		_iso(origin + footprint) + Vector2(0.0, -elevation_tiles * TILE_SIZE.y),
+		_iso(origin + Vector2i(0, footprint.y)) + Vector2(0.0, -elevation_tiles * TILE_SIZE.y)
 	]
 	var lift := Vector2(0.0, -height_tiles * TILE_SIZE.y)
 	var top := PackedVector2Array([corners[0] + lift, corners[1] + lift, corners[2] + lift, corners[3] + lift])
 	var right := PackedVector2Array([corners[1] + lift, corners[2] + lift, corners[2], corners[1]])
 	var left := PackedVector2Array([corners[2] + lift, corners[3] + lift, corners[3], corners[2]])
 
-	_add_polygon("%s RightFace" % node_name, right, color.darkened(0.18), _depth_z(corners[2], DEPTH_RIGHT_FACE))
-	_add_polygon("%s LeftFace" % node_name, left, color.darkened(0.28), _depth_z(corners[2], DEPTH_LEFT_FACE))
-	_add_polygon("%s TopFace" % node_name, top, color.lightened(0.08), _depth_z(corners[2], DEPTH_TOP_FACE))
+	var depth_anchor := _iso(origin + footprint)
+	_add_polygon("%s RightFace" % node_name, right, color.darkened(0.18), _depth_z(depth_anchor, DEPTH_RIGHT_FACE))
+	_add_polygon("%s LeftFace" % node_name, left, color.darkened(0.28), _depth_z(depth_anchor, DEPTH_LEFT_FACE))
+	_add_polygon("%s TopFace" % node_name, top, color.lightened(0.08), _depth_z(depth_anchor, DEPTH_TOP_FACE))
 
 
 func _add_actor_marker(actor_id: String, display_name: String, color: Color) -> void:

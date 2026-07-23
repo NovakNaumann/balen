@@ -91,9 +91,15 @@ Map builder controls:
 - `O`: toggle object placement.
 - `Tab`: cycle object preset.
 - Left mouse: paint terrain or place selected object.
+- In object mode, left click an existing object to select it.
 - Right mouse: erase terrain or remove object.
 - Middle mouse drag: pan.
 - Mouse wheel: zoom.
+- Boundary buttons resize the playable map frame.
+- `Alt` + arrow: grow a map boundary side.
+- `Alt` + `Shift` + arrow: shrink a map boundary side.
+- `PageUp` / `PageDown`: raise/lower the selected object elevation, or the default elevation for newly placed objects when nothing is selected.
+- `,` / `.`: lower/raise the selected object height.
 - `S`: save.
 - `F5`: reload.
 
