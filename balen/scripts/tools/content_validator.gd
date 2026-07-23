@@ -1,6 +1,7 @@
 extends SceneTree
 
 const MANIFEST_PATH := "res://source_data/voyage/source_manifest.json"
+const CROSSROADS_MAP_PATH := "res://maps/crossroads_plaza.json"
 const EXPECTED_SOURCE_FILENAME := "balen_35_low_hp_d20_known_patch.json"
 const EXPECTED_SOURCE_HASH := "E7C75DFA082DE61FD0AFD1CBE242179764BE5533EEF27B10E29E55E17344606B"
 const REQUIRED_DOCS := [
@@ -35,6 +36,7 @@ func _initialize() -> void:
 	var warnings: Array[String] = []
 
 	_validate_manifest(errors, warnings)
+	_validate_crossroads_map(errors)
 	_validate_docs(errors, warnings)
 	_validate_reference_images(errors)
 
@@ -88,6 +90,47 @@ func _validate_manifest(errors: Array[String], warnings: Array[String]) -> void:
 			errors.append("Manifest says source is present, but file is missing: %s" % source_path)
 		elif FileAccess.get_file_as_bytes(source_path).size() != int(parsed.get("source_byte_size", -1)):
 			errors.append("Copied source JSON byte size does not match source manifest.")
+
+
+func _validate_crossroads_map(errors: Array[String]) -> void:
+	if not FileAccess.file_exists(CROSSROADS_MAP_PATH):
+		errors.append("Missing Crossroads Plaza map data: %s" % CROSSROADS_MAP_PATH)
+		return
+
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(CROSSROADS_MAP_PATH))
+	if typeof(parsed) != TYPE_DICTIONARY:
+		errors.append("Crossroads Plaza map must be a JSON object.")
+		return
+
+	var terrain: Variant = parsed.get("terrain", [])
+	var placements: Variant = parsed.get("placements", [])
+	if typeof(terrain) != TYPE_ARRAY:
+		errors.append("Crossroads Plaza terrain must be an array.")
+		return
+	if typeof(placements) != TYPE_ARRAY:
+		errors.append("Crossroads Plaza placements must be an array.")
+		return
+
+	var road_count := 0
+	var sidewalk_count := 0
+	var blocker_count := 0
+	for terrain_entry in terrain:
+		if typeof(terrain_entry) != TYPE_DICTIONARY:
+			continue
+		match str(terrain_entry.get("kind", "")):
+			"road":
+				road_count += 1
+			"sidewalk":
+				sidewalk_count += 1
+	for placement in placements:
+		if typeof(placement) == TYPE_DICTIONARY and bool(placement.get("blocks_movement", false)):
+			blocker_count += 1
+	if road_count < 100:
+		errors.append("Crossroads Plaza needs painted road terrain.")
+	if sidewalk_count < 100:
+		errors.append("Crossroads Plaza needs painted sidewalk terrain.")
+	if blocker_count < 10:
+		errors.append("Crossroads Plaza needs placed blocking structures.")
 
 
 func _validate_docs(errors: Array[String], _warnings: Array[String]) -> void:

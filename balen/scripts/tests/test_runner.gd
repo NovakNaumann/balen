@@ -76,27 +76,56 @@ func _initialize() -> void:
 		failures.append("Bootstrap graybox scene failed to load.")
 	else:
 		var graybox_instance: Node = graybox_scene.instantiate()
-		if graybox_instance.get_node_or_null("MapAuthoring/Ground/Roads/North South Fountain Boulevard") == null:
-			failures.append("Bootstrap graybox scene is missing editable road ground authoring nodes.")
-		if graybox_instance.get_node_or_null("MapAuthoring/Ground/Sidewalks/Fountain Pedestrian Apron") == null:
-			failures.append("Bootstrap graybox scene is missing editable sidewalk ground authoring nodes.")
-		if graybox_instance.get_node_or_null("MapAuthoring/Buildings") == null:
-			failures.append("Bootstrap graybox scene is missing editable building authoring nodes.")
-		if graybox_instance.get_node_or_null("MapAuthoring/Routes/The Ringmarket") == null:
-			failures.append("Bootstrap graybox scene is missing the Ringmarket route authoring node.")
-		if graybox_instance.get_node_or_null("MapAuthoring/CombatAreas/Same Scene Combat Test Area") == null:
-			failures.append("Bootstrap graybox scene is missing the editable combat area authoring node.")
-		if graybox_instance.has_method("_authoring_nodes") and graybox_instance.call("_authoring_nodes", 3).size() < 10:
-			failures.append("Bootstrap graybox should expose editable architecture authoring nodes.")
+		if not FileAccess.file_exists("res://maps/crossroads_plaza.json"):
+			failures.append("Crossroads Plaza should be driven by a painted map JSON file.")
+		else:
+			var parsed_map: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://maps/crossroads_plaza.json"))
+			if typeof(parsed_map) != TYPE_DICTIONARY:
+				failures.append("Crossroads Plaza map JSON should parse as a dictionary.")
+			else:
+				var terrain: Array = parsed_map.get("terrain", [])
+				var placements: Array = parsed_map.get("placements", [])
+				var road_count := 0
+				var sidewalk_count := 0
+				var building_count := 0
+				var has_ringmarket := false
+				var has_combat_area := false
+				for terrain_entry in terrain:
+					if typeof(terrain_entry) != TYPE_DICTIONARY:
+						continue
+					if str(terrain_entry.get("kind", "")) == "road":
+						road_count += 1
+					elif str(terrain_entry.get("kind", "")) == "sidewalk":
+						sidewalk_count += 1
+				for placement in placements:
+					if typeof(placement) != TYPE_DICTIONARY:
+						continue
+					if int(placement.get("kind", -1)) == 3:
+						building_count += 1
+					if str(placement.get("name", "")) == "The Ringmarket":
+						has_ringmarket = true
+					if str(placement.get("name", "")) == "Same Scene Combat Test Area":
+						has_combat_area = true
+				if road_count < 100:
+					failures.append("Crossroads Plaza should contain painted road tiles.")
+				if sidewalk_count < 100:
+					failures.append("Crossroads Plaza should contain painted sidewalk tiles.")
+				if building_count < 10:
+					failures.append("Crossroads Plaza should contain placed building assets.")
+				if not has_ringmarket:
+					failures.append("Crossroads Plaza map JSON should keep the Ringmarket route placement.")
+				if not has_combat_area:
+					failures.append("Crossroads Plaza map JSON should keep the same-scene combat placement.")
 		if graybox_instance.has_method("_is_grid_walkable"):
+			graybox_instance.call("_load_map_data")
 			if not bool(graybox_instance.call("_is_grid_walkable", Vector2i(0, 0))):
 				failures.append("Authored Crossroads Plaza should keep the central fountain road walkable.")
 			if not bool(graybox_instance.call("_is_grid_walkable", Vector2i(-12, 7))):
 				failures.append("Authored Crossroads Plaza should keep the Slayers Guild road exit walkable.")
 			if not bool(graybox_instance.call("_is_grid_walkable", Vector2i(12, 7))):
 				failures.append("Authored Crossroads Plaza should keep the Ringmarket road exit walkable.")
-			if not bool(graybox_instance.call("_is_grid_walkable", Vector2i(-9, -13))):
-				failures.append("Authored Crossroads Plaza fountain road corner fills should be walkable.")
+			if not bool(graybox_instance.call("_is_grid_walkable", Vector2i(-7, -6))):
+				failures.append("Painted Crossroads Plaza fountain ring road should be walkable.")
 			if not bool(graybox_instance.call("_is_grid_walkable", Vector2i(14, 5))):
 				failures.append("Authored Crossroads Plaza road exit caps should be walkable.")
 			if bool(graybox_instance.call("_is_grid_walkable", Vector2i(-14, 2))):
@@ -104,6 +133,10 @@ func _initialize() -> void:
 			if bool(graybox_instance.call("_is_grid_walkable", Vector2i(-14, -3))):
 				failures.append("Authored Crossroads Plaza perimeter wall infill should block movement.")
 		graybox_instance.queue_free()
+
+	var map_builder_scene: Variant = load("res://scenes/tools/map_builder.tscn")
+	if map_builder_scene == null:
+		failures.append("Map builder scene should load.")
 
 	var graybox_script: Variant = load("res://scripts/testbeds/bootstrap_graybox.gd")
 	if graybox_script == null:

@@ -1,5 +1,7 @@
 extends Node2D
 
+const MAP_DATA := preload("res://scripts/map/map_data.gd")
+const MAP_DATA_PATH := "res://maps/crossroads_plaza.json"
 const TITLE_SCENE := "res://scenes/ui/title_screen.tscn"
 const DESIGN_RESOLUTION := Vector2(1920.0, 1080.0)
 const TILE_SIZE := Vector2(112.0, 56.0)
@@ -94,10 +96,15 @@ var _selected_actor_id := "debug.knight"
 var _evidence_collected := false
 var _actor_states: Dictionary = {}
 var _actor_nodes: Dictionary = {}
+var _map_data: Dictionary = {}
+var _map_terrain_by_kind: Dictionary = {}
+var _map_placements_by_kind: Dictionary = {}
+var _map_all_placements: Array[Dictionary] = []
 
 
 func _ready() -> void:
 	GameState.current_scene_path = "res://scenes/testbeds/bootstrap_graybox.tscn"
+	_load_map_data()
 	_initialize_actor_states()
 	_restore_scene_state_from_game_state()
 	_build_scene()
@@ -461,6 +468,85 @@ func _authoring_nodes(kind_filter := -1) -> Array[Node]:
 	return result
 
 
+func _load_map_data() -> void:
+	_map_data = MAP_DATA.load_map(MAP_DATA_PATH)
+	_map_terrain_by_kind.clear()
+	_map_placements_by_kind.clear()
+	_map_all_placements.clear()
+	if _map_data.is_empty():
+		return
+
+	for terrain_entry in _map_data.get("terrain", []):
+		if typeof(terrain_entry) != TYPE_DICTIONARY:
+			continue
+		var entry: Dictionary = terrain_entry
+		var terrain_kind := str(entry.get("kind", ""))
+		if terrain_kind == "":
+			continue
+		var cells: Dictionary = _map_terrain_by_kind.get(terrain_kind, {})
+		var grid_position: Vector2i = MAP_DATA.grid_from_terrain_entry(entry)
+		cells[MAP_DATA.terrain_key(grid_position)] = entry
+		_map_terrain_by_kind[terrain_kind] = cells
+
+	for raw_placement in _map_data.get("placements", []):
+		if typeof(raw_placement) != TYPE_DICTIONARY:
+			continue
+		var placement := _map_placement_definition(raw_placement)
+		var kind := int(placement.get("kind", -1))
+		var placements: Array = _map_placements_by_kind.get(kind, [])
+		placements.append(placement)
+		_map_placements_by_kind[kind] = placements
+		_map_all_placements.append(placement)
+
+
+func _has_map_data() -> bool:
+	return not _map_data.is_empty()
+
+
+func _map_placement_definition(raw_placement: Dictionary) -> Dictionary:
+	var kind := int(raw_placement.get("kind", AUTHORING_KIND_BUILDING))
+	var fallback_color := Color(0.70, 0.64, 0.52, 1.0)
+	var result := {
+		"name": str(raw_placement.get("name", "Map Placement")),
+		"asset_id": str(raw_placement.get("asset_id", "custom")),
+		"kind": kind,
+		"grid": MAP_DATA.grid_from_array(raw_placement.get("grid", []), Vector2i.ZERO),
+		"footprint": MAP_DATA.grid_from_array(raw_placement.get("footprint", []), Vector2i.ONE),
+		"height": float(raw_placement.get("height", 1.0)),
+		"color": MAP_DATA.color_from_array(raw_placement.get("color", []), fallback_color),
+		"roof": MAP_DATA.color_from_array(raw_placement.get("roof_color", []), Color(0.16, 0.31, 0.46, 1.0)),
+		"awning": MAP_DATA.color_from_array(raw_placement.get("awning_color", []), Color.TRANSPARENT),
+		"render_style": int(raw_placement.get("render_style", _default_render_style_for_kind(kind))),
+		"blocks_movement": bool(raw_placement.get("blocks_movement", false))
+	}
+	if raw_placement.has("actor_id"):
+		result["actor_id"] = str(raw_placement.get("actor_id", ""))
+	return result
+
+
+func _map_placement_definitions(kind: int) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for placement in _map_placements_by_kind.get(kind, []):
+		if typeof(placement) == TYPE_DICTIONARY:
+			result.append(placement)
+	return result
+
+
+func _map_terrain_kind_for_authoring_kind(kind: int) -> String:
+	match kind:
+		AUTHORING_KIND_ROAD:
+			return MAP_DATA.TERRAIN_ROAD
+		AUTHORING_KIND_SIDEWALK:
+			return MAP_DATA.TERRAIN_SIDEWALK
+		_:
+			return ""
+
+
+func _is_map_terrain_cell(grid_position: Vector2i, terrain_kind: String) -> bool:
+	var cells: Dictionary = _map_terrain_by_kind.get(terrain_kind, {})
+	return cells.has(MAP_DATA.terrain_key(grid_position))
+
+
 func _node_display_name(node: Node) -> String:
 	var named_value := str(node.get("display_name"))
 	if named_value != "":
@@ -469,6 +555,22 @@ func _node_display_name(node: Node) -> String:
 
 
 func _actor_definitions() -> Array[Dictionary]:
+	if _has_map_data():
+		var map_spawns := _map_placement_definitions(AUTHORING_KIND_SPAWN)
+		if not map_spawns.is_empty():
+			var map_result: Array[Dictionary] = []
+			for spawn in map_spawns:
+				var actor_id := str(spawn.get("actor_id", ""))
+				if actor_id == "":
+					actor_id = str(spawn.get("name", "actor")).to_snake_case()
+				map_result.append({
+					"id": actor_id,
+					"name": str(spawn.get("name", actor_id)),
+					"grid": spawn.get("grid", Vector2i.ZERO),
+					"color": spawn.get("color", Color.WHITE)
+				})
+			return map_result
+
 	var spawns := _authoring_nodes(AUTHORING_KIND_SPAWN)
 	if spawns.is_empty():
 		return ACTOR_DEFINITIONS
@@ -488,6 +590,18 @@ func _actor_definitions() -> Array[Dictionary]:
 
 
 func _route_definitions() -> Array[Dictionary]:
+	if _has_map_data():
+		var map_routes := _map_placement_definitions(AUTHORING_KIND_ROUTE)
+		if not map_routes.is_empty():
+			var map_result: Array[Dictionary] = []
+			for route in map_routes:
+				map_result.append({
+					"name": str(route.get("name", "Map Route")),
+					"grid": route.get("grid", Vector2i.ZERO),
+					"color": route.get("color", Color.WHITE)
+				})
+			return map_result
+
 	var routes := _authoring_nodes(AUTHORING_KIND_ROUTE)
 	if routes.is_empty():
 		return PLAZA_ROUTES
@@ -504,6 +618,15 @@ func _route_definitions() -> Array[Dictionary]:
 
 func _blocker_definitions() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
+	if _has_map_data():
+		for placement in _map_all_placements:
+			if bool(placement.get("blocks_movement", false)):
+				result.append({
+					"origin": placement.get("grid", Vector2i.ZERO),
+					"footprint": placement.get("footprint", Vector2i.ONE)
+				})
+		return result
+
 	for node in _authoring_nodes():
 		if bool(node.get("blocks_movement")):
 			result.append({
@@ -516,6 +639,9 @@ func _blocker_definitions() -> Array[Dictionary]:
 
 
 func _authored_placement_definitions(kind: int) -> Array[Dictionary]:
+	if _has_map_data():
+		return _map_placement_definitions(kind)
+
 	var result: Array[Dictionary] = []
 	for node in _authoring_nodes(kind):
 		result.append({
@@ -565,6 +691,8 @@ func _authored_grid_position(node: Node) -> Vector2i:
 
 
 func _has_authored_ground() -> bool:
+	if _has_map_data():
+		return not _map_terrain_by_kind.is_empty()
 	return not _authoring_nodes(AUTHORING_KIND_ROAD).is_empty() or not _authoring_nodes(AUTHORING_KIND_SIDEWALK).is_empty() or not _authoring_nodes(AUTHORING_KIND_FOUNDATION).is_empty()
 
 
@@ -577,6 +705,12 @@ func _grid_in_placement(grid_position: Vector2i, placement: Dictionary) -> bool:
 
 
 func _is_authored_ground_cell(grid_position: Vector2i, kind: int) -> bool:
+	if _has_map_data():
+		var terrain_kind := _map_terrain_kind_for_authoring_kind(kind)
+		if terrain_kind == "":
+			return false
+		return _is_map_terrain_cell(grid_position, terrain_kind)
+
 	for placement in _authored_placement_definitions(kind):
 		if _grid_in_placement(grid_position, placement):
 			return true
@@ -634,6 +768,10 @@ func _add_diamond_floor(origin: Vector2i, half_extents: Vector2i, color: Color, 
 
 
 func _add_authored_ground_tiles() -> void:
+	if _has_map_data():
+		_add_map_terrain_tiles()
+		return
+
 	for foundation in _authored_placement_definitions(AUTHORING_KIND_FOUNDATION):
 		_add_authored_ground_placement(foundation, "Foundation", LAYER_FOUNDATION)
 	for sidewalk in _authored_placement_definitions(AUTHORING_KIND_SIDEWALK):
@@ -660,6 +798,35 @@ func _add_authored_ground_placement(placement: Dictionary, suffix: String, layer
 			tile.color = base_color.lightened(0.08 if (x + y) % 2 == 0 else 0.0)
 			tile.z_index = layer_z
 			_world_root.add_child(tile)
+
+
+func _add_map_terrain_tiles() -> void:
+	for terrain_entry in MAP_DATA.sorted_terrain(_map_data.get("terrain", [])):
+		var grid_position: Vector2i = MAP_DATA.grid_from_terrain_entry(terrain_entry)
+		if abs(grid_position.x) > FLOOR_HALF_EXTENTS.x or abs(grid_position.y) > FLOOR_HALF_EXTENTS.y:
+			continue
+
+		var terrain_kind := str(terrain_entry.get("kind", MAP_DATA.TERRAIN_SIDEWALK))
+		var center := _iso(grid_position)
+		var tile := Polygon2D.new()
+		tile.name = "Painted %s %d,%d" % [terrain_kind.capitalize(), grid_position.x, grid_position.y]
+		tile.polygon = _diamond(center)
+		var base_color: Color = MAP_DATA.terrain_color(terrain_kind)
+		tile.color = base_color.lightened(0.08 if (grid_position.x + grid_position.y) % 2 == 0 else 0.0)
+		tile.z_index = _map_terrain_z_index(terrain_kind)
+		_world_root.add_child(tile)
+
+
+func _map_terrain_z_index(terrain_kind: String) -> int:
+	match terrain_kind:
+		MAP_DATA.TERRAIN_WATER:
+			return LAYER_WATER
+		MAP_DATA.TERRAIN_ROAD:
+			return LAYER_ROAD
+		MAP_DATA.TERRAIN_PATH:
+			return LAYER_GROUND_DETAIL
+		_:
+			return LAYER_SIDEWALK
 
 
 func _add_ring_city_plaza_bands() -> void:
@@ -1157,6 +1324,9 @@ func _is_grid_walkable(grid_position: Vector2i) -> bool:
 	if _is_grid_blocked_by_architecture(grid_position):
 		return false
 
+	if _has_map_data():
+		return _is_map_terrain_cell(grid_position, MAP_DATA.TERRAIN_ROAD) or _is_map_terrain_cell(grid_position, MAP_DATA.TERRAIN_SIDEWALK) or _is_map_terrain_cell(grid_position, MAP_DATA.TERRAIN_PATH)
+
 	if _has_authored_ground():
 		return _is_authored_ground_cell(grid_position, AUTHORING_KIND_ROAD) or _is_authored_ground_cell(grid_position, AUTHORING_KIND_SIDEWALK)
 
@@ -1180,6 +1350,9 @@ func _is_grid_blocked_by_architecture(grid_position: Vector2i) -> bool:
 
 
 func _is_plaza_road_cell(grid_position: Vector2i) -> bool:
+	if _has_map_data():
+		return _is_map_terrain_cell(grid_position, MAP_DATA.TERRAIN_ROAD)
+
 	if not _authoring_nodes(AUTHORING_KIND_ROAD).is_empty():
 		return _is_authored_ground_cell(grid_position, AUTHORING_KIND_ROAD)
 

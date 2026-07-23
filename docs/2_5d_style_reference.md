@@ -29,8 +29,9 @@ Painterly realism references for early sprite and environment direction:
 - Plaza-scale buildings should frame civic space as continuous street walls, guild halls, arcade rows, tower clusters, domes, and attached market fronts. Avoid isolated prop boxes that make large roads feel empty or randomly decorated.
 - Walkable space must agree with visible architecture: walls, guild fronts, arcades, towers, domes, and building foundations block movement, and non-walkable plaza edges should render as masonry/foundations rather than black void.
 - In the Crossroads Plaza graybox, lighter tiles are roads and grey checker tiles are sidewalk/plaza pedestrian areas. Buildings, tents, and arcade piers belong on sidewalk/frontage parcels and must not block authored road exits.
-- Crossroads Plaza map placement is manually editable in `balen/scenes/testbeds/bootstrap_graybox.tscn` under `MapAuthoring`. Use `PlazaAuthoringNode` children for ground, buildings, tents, routes, spawns, crowds, banners, and combat areas; move or duplicate these nodes in Godot before changing runtime generation code.
-- For the current Crossroads Plaza blockout, roads should be authored first, sidewalks should outline those roads as two-tile pedestrian bands, and buildings should sit outside the sidewalk bands as continuous plaza-wall frontage.
+- Crossroads Plaza map placement is manually editable through `balen/scenes/tools/map_builder.tscn`, which saves to `balen/maps/crossroads_plaza.json`.
+- Roads, sidewalks, paths, water, plazas, and canals should be painted as individual isometric terrain cells. Buildings, walls, tents, exits, spawns, banners, props, and combat areas should be placed as objects with footprints.
+- For the current Crossroads Plaza blockout, roads should be painted first, sidewalks should outline those roads as two-tile pedestrian bands, and buildings should sit outside the sidewalk bands as continuous plaza-wall frontage.
 - Use painterly realism for placeholder-forward assets: hand-painted material texture, readable silhouettes, warm interior craft detail, blue-gold civic cloth, brass/gold trim, pale stone, and clear species separation.
 - Character sprites should remain 2.5D readable at game scale even when portraits use richer painterly detail.
 - Avoid true 3D cameras, 3D mesh-first environments, free perspective orbit, or physically modeled 3D battle arenas unless a future exception is explicitly approved.
@@ -54,7 +55,7 @@ Painterly realism references for early sprite and environment direction:
 ## Implementation Notes
 
 - Prefer `Node2D`, `CanvasItem` layers, `TileMapLayer` or authored tile/object layers, sprite sheets, polygon placeholders, and deterministic depth ordering.
-- Ground authoring nodes define visible road and sidewalk regions in the editor. `blocks_movement` on an authored plaza node defines its footprint as non-walkable unless the cell is an authored road exit.
+- Painted terrain cells define visible and walkable road, sidewalk, and path regions. `blocks_movement` on a placed map object defines its footprint as non-walkable unless the cell is an authored road exit.
 - Placeable map assets should come from `MapAssetCatalog` presets where possible. Presets define category, footprint, height, collision, color, and render style so a road, sidewalk, building mass, modular market prop, marker, or combat area behaves correctly when placed.
 - Keep combat math and combat state separate from presentation. The scene should display tactical state; it should not own the resolver rules.
 - For Milestone 0, graybox geometry may use polygons and labels. Later milestones should replace these with approved painterly isometric assets.

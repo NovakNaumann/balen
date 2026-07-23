@@ -62,21 +62,33 @@ The current working test is intentionally small: boot to title screen, load a 19
 
 ## Manual Map Editing
 
-Crossroads Plaza can be manually shaped in Godot:
+Crossroads Plaza is now driven by `balen/maps/crossroads_plaza.json`.
 
-1. Open `balen/scenes/testbeds/bootstrap_graybox.tscn`.
-2. Expand `MapAuthoring`.
-3. Move, duplicate, rename, or resize `PlazaAuthoringNode` children under `Ground`, `Buildings`, `Tents`, `Routes`, `Spawns`, `Crowd`, `Banners`, and `CombatAreas`.
-4. Choose an `asset_id` preset on the node to apply its category, footprint, height, collision, colors, and render style.
-5. Use `grid_position` and `footprint` for tile placement. For buildings and walls, enable `blocks_movement` so click-to-move respects the visible footprint.
+Use the side builder scene for map edits:
 
-Ground authoring uses broad editable regions: road nodes are the light plaza routes, sidewalk nodes are the grey pedestrian areas, and prop/building nodes sit on top of them.
-Map asset presets live in `balen/scripts/world/map_asset_catalog.gd`; `PlazaAuthoringNode` uses them as a selectable in-editor asset palette.
+1. Open `balen/scenes/tools/map_builder.tscn`.
+2. Paint roads, sidewalks, paths, and water as individual isometric terrain cells.
+3. Use ellipse and ring shapes for round plazas, true circular roads, and fountain paths.
+4. Place buildings, tents, route exits, spawns, banners, and combat areas as objects.
+5. Press `S` in the builder to save back to `balen/maps/crossroads_plaza.json`.
 
-Viewport movement is tile-snapped: dragging a `PlazaAuthoringNode` with Godot's move tool updates its `grid_position` to the nearest isometric tile.
-Building nodes also preview their vertical 2.5D volume in the editor, so leave space for the orange/tall volume outline, not only the flat red footprint.
-Runtime depth sorting uses each object's lower footprint anchor plus small face layers, so objects placed lower/front in the isometric view should render over objects behind them.
-Roads, sidewalks, masonry fill, and ring markings are fixed bottom layers; market tents and frontage awnings repeat as tile modules instead of stretching one block across a footprint.
+The runtime scene `balen/scenes/testbeds/bootstrap_graybox.tscn` loads this JSON directly. Roads, sidewalks, and paths define walkable cells; buildings and wall-like structures block movement through their placed footprints.
+
+Map builder controls:
+
+- `1` / `2` / `3` / `4`: road, sidewalk, path, water.
+- `B` / `L` / `E` / `R`: brush, line, ellipse, ring.
+- `G`: regenerate two-tile sidewalk outlines around painted roads.
+- `O`: toggle object placement.
+- `Tab`: cycle object preset.
+- Left mouse: paint terrain or place selected object.
+- Right mouse: erase terrain or remove object.
+- Middle mouse drag: pan.
+- Mouse wheel: zoom.
+- `S`: save.
+- `F5`: reload.
+
+Legacy `PlazaAuthoringNode` and `MapAssetCatalog` code remains available as a fallback/reference, but new map work should use the JSON builder path.
 
 Working test controls:
 
