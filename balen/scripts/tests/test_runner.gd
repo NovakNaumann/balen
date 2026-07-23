@@ -95,8 +95,14 @@ func _initialize() -> void:
 				failures.append("Authored Crossroads Plaza should keep the Slayers Guild road exit walkable.")
 			if not bool(graybox_instance.call("_is_grid_walkable", Vector2i(12, 7))):
 				failures.append("Authored Crossroads Plaza should keep the Ringmarket road exit walkable.")
+			if not bool(graybox_instance.call("_is_grid_walkable", Vector2i(-9, -13))):
+				failures.append("Authored Crossroads Plaza fountain road corner fills should be walkable.")
+			if not bool(graybox_instance.call("_is_grid_walkable", Vector2i(14, 5))):
+				failures.append("Authored Crossroads Plaza road exit caps should be walkable.")
 			if bool(graybox_instance.call("_is_grid_walkable", Vector2i(-14, 2))):
 				failures.append("Authored Crossroads Plaza building walls should block movement.")
+			if bool(graybox_instance.call("_is_grid_walkable", Vector2i(-14, -3))):
+				failures.append("Authored Crossroads Plaza perimeter wall infill should block movement.")
 		graybox_instance.queue_free()
 
 	var graybox_script: Variant = load("res://scripts/testbeds/bootstrap_graybox.gd")

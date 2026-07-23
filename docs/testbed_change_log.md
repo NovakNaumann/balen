@@ -29,3 +29,4 @@ This file records implementation assumptions, source decisions, and notable chan
 - Added editable ground authoring nodes under `MapAuthoring/Ground` so roads and sidewalk regions are visible while manually arranging the plaza in Godot.
 - Added `MapAssetCatalog` presets and an `asset_id` selector on `PlazaAuthoringNode` so map pieces can be chosen as categorized assets with default footprint, height, collision, color, and render-style behavior.
 - Rebuilt the Crossroads Plaza authoring layout around explicit road, sidewalk, and perimeter-building assets: the fountain boulevard now uses authored ring-road segments, sidewalks are separate two-tile bands around roads, and buildings sit beyond the sidewalks as plaza-wall frontage while leaving route exits open.
+- Filled early Crossroads Plaza authoring gaps with local road-cap assets on road/roundabout seams and added perimeter building infill where dark voids appeared beyond the sidewalk line.
